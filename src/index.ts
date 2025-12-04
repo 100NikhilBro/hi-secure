@@ -1,0 +1,1 @@
+console.log("HiSecure is Ready to Start");
