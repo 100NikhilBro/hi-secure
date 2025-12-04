@@ -1,36 +1,69 @@
-import sanitizeHtml from 'sanitize-html'
+import sanitizeHtml from "sanitize-html";
 import { AdapterError } from "../core/errors/AdapterError";
+import { logger } from "../logging";
 
 export class SanitizeHtmlAdapter {
-  private options: any;
-  constructor(options: any = {}) {
-    this.options = options;
-  }
+    private options: sanitizeHtml.IOptions;
 
-  sanitize(input: string): string {
-    try {
-      return sanitizeHtml(input, this.options);
-    } catch (err) {
-      throw new AdapterError("sanitize-html adapter failed.");
+    constructor(options: sanitizeHtml.IOptions = {}) {
+        this.options = options;
     }
-  }
 
-  // middleware helper for express
-  middleware() {
-    return (req: any, _res: any, next: any) => {
-      try {
-        // sanitize body (simple strategy: loop string fields) — refine later
-        if (req.body && typeof req.body === "object") {
-          for (const k of Object.keys(req.body)) {
-            if (typeof req.body[k] === "string") {
-              req.body[k] = this.sanitize(req.body[k]);
-            }
-          }
+    sanitize(input: string): string {
+        try {
+            const result = sanitizeHtml(input, this.options);
+
+            // sanitize-html always returns string but enforce for TS
+            return typeof result === "string" ? result : String(result);
+
+        } catch (err: any) {
+            logger.error("❌ sanitize-html failed", {
+                error: err?.message || err,
+                inputPreview: typeof input === "string" ? input.slice(0, 100) : undefined
+            });
+
+            throw new AdapterError("sanitize-html adapter failed.");
         }
-        next();
-      } catch (e) {
-        next(e);
-      }
-    };
-  }
+    }
+
+    // Recursively sanitize nested objects & arrays
+    private deepSanitize(obj: any): any {
+        if (typeof obj === "string") {
+            return this.sanitize(obj);
+        }
+
+        if (Array.isArray(obj)) {
+            return obj.map((item) => this.deepSanitize(item));
+        }
+
+        if (obj && typeof obj === "object") {
+            const cleaned: any = {};
+            for (const key of Object.keys(obj)) {
+                cleaned[key] = this.deepSanitize(obj[key]);
+            }
+            return cleaned;
+        }
+
+        return obj; // primitive (number, boolean, null, etc.)
+    }
+
+    middleware() {
+        return (req: any, _res: any, next: any) => {
+            try {
+                if (req.body) {
+                    req.body = this.deepSanitize(req.body);
+
+                    logger.debug("🧼 Request sanitized successfully", {
+                        keys: Object.keys(req.body)
+                    });
+                }
+                next();
+            } catch (err: any) {
+                logger.error("❌ Sanitizer middleware error", {
+                    error: err?.message || err
+                });
+                next(err);
+            }
+        };
+    }
 }

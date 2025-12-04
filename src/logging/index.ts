@@ -1,1 +1,2 @@
-// add krenge
+export * from "./winstonSetup";
+export * from "./morganSetup";

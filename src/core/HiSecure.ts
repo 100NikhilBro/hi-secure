@@ -1,6 +1,10 @@
 import { defaultConfig, HiSecureConfig } from "./config";
 import { LIB_NAME, LIB_VERSION } from "./constants";
 import { deepMerge } from "../utils/deepMerge";
+import { deepFreeze } from "../utils/deepFreeze";
+
+// Logging
+import { logger } from "../logging";
 
 // Adapters
 import { ArgonAdapter } from "../adapters/ArgonAdapter";
@@ -10,7 +14,7 @@ import { ExpressRLAdapter } from "../adapters/ExpressRLAdapter";
 import { ZodAdapter } from "../adapters/ZodAdapter";
 import { ExpressValidatorAdapter } from "../adapters/ExpressValidatorAdapter";
 import { SanitizeHtmlAdapter } from "../adapters/SanitizeHtmlAdapter";
-import { DomPurifyAdapter } from "../adapters/DomPurifyAdapter";   // ⭐ Added
+import { DomPurifyAdapter } from "../adapters/DomPurifyAdapter";
 
 // Managers
 import { HashManager } from "../managers/HashManagers";
@@ -18,13 +22,18 @@ import { RateLimitManager } from "../managers/RateLimitManager";
 import { ValidatorManager } from "../managers/ValidatorManager";
 import { SanitizerManager } from "../managers/SanitizerManager";
 
-// Default Express middlewares
+// Middlewares
 import helmet from "helmet";
 import hpp from "hpp";
 import cors from "cors";
+import express from "express";
+
+// Error Handler
+import { errorHandler } from "../middlewares/errorHandler";
 
 export class HiSecure {
     private config: HiSecureConfig;
+    private initialized = false;
 
     // Managers
     private hashManager!: HashManager;
@@ -47,20 +56,39 @@ export class HiSecure {
     }
 
     init() {
-        console.log(`\n🔐 ${LIB_NAME} v${LIB_VERSION} initialized`);
-        console.log("⚡ Loaded config:", this.config);
+        if (this.initialized) {
+            logger.warn("⚠ HiSecure.init() called again → ignored.");
+            return;
+        }
+
+        logger.info(`🔐 ${LIB_NAME} v${LIB_VERSION} initialized`);
+        logger.info("⚙️ Loaded configuration:", this.config);
 
         this.setupAdapters();
         this.setupManagers();
+
+        // 🔒 Deep freeze EVERYTHING → full immutability
+        deepFreeze(this.config);
+        deepFreeze(this.hashManager);
+        deepFreeze(this.rateLimitManager);
+        deepFreeze(this.validatorManager);
+        deepFreeze(this.sanitizerManager);
+
+        this.initialized = true;
+        logger.info("🔒 HiSecure fully locked & immutable — Ready for production");
     }
 
-    // -----------------------------
-    // STEP 1: Setup all adapters
-    // -----------------------------
-    private setupAdapters() {
-        console.log("🧩 Setting up adapters...");
+    isInitialized() {
+        return this.initialized;
+    }
 
-        // Hash adapters
+    // ---------------------------------------------
+    // Adapter Setup
+    // ---------------------------------------------
+    private setupAdapters() {
+        logger.info("🧩 Setting up adapters...");
+
+        // Hashing
         this.hashingPrimary =
             this.config.hashing.primary === "argon2"
                 ? new ArgonAdapter()
@@ -71,16 +99,14 @@ export class HiSecure {
                 ? new BcryptAdapter(this.config.hashing.saltRounds)
                 : null;
 
-// Rate limiter adapters
-this.rateLimiterPrimary = this.config.rateLimiter.useAdaptiveMode
-    ? new RLFlexibleAdapter(this.config.rateLimiter)
-    : new ExpressRLAdapter(this.config.rateLimiter);
+        // Rate Limiter
+        this.rateLimiterPrimary = this.config.rateLimiter.useAdaptiveMode
+            ? new RLFlexibleAdapter(this.config.rateLimiter)
+            : new ExpressRLAdapter(this.config.rateLimiter);
 
-// Fallback always express-based
-this.rateLimiterFallback = new ExpressRLAdapter(this.config.rateLimiter);
+        this.rateLimiterFallback = new ExpressRLAdapter(this.config.rateLimiter);
 
-
-        // Validation adapters
+        // Validators
         this.validatorPrimary =
             this.config.validation.mode === "zod"
                 ? new ZodAdapter()
@@ -91,18 +117,18 @@ this.rateLimiterFallback = new ExpressRLAdapter(this.config.rateLimiter);
                 ? new ExpressValidatorAdapter()
                 : null;
 
-        // Sanitizer primary + fallback
+        // Sanitizers
         this.sanitizerPrimary = new SanitizeHtmlAdapter(this.config.sanitizer);
-        this.sanitizerFallback = new DomPurifyAdapter(); // ⭐ fallback
+        this.sanitizerFallback = new DomPurifyAdapter();
 
-        console.log("✔ Adapters ready");
+        logger.info("✔ Adapters ready");
     }
 
-    // -----------------------------
-    // STEP 2: Setup managers
-    // -----------------------------
+    // ---------------------------------------------
+    // Manager Setup
+    // ---------------------------------------------
     private setupManagers() {
-        console.log("🗂 Setting up managers...");
+        logger.info("🗂 Setting up managers...");
 
         this.hashManager = new HashManager(
             this.config.hashing,
@@ -127,10 +153,12 @@ this.rateLimiterFallback = new ExpressRLAdapter(this.config.rateLimiter);
             this.sanitizerFallback
         );
 
-        console.log("✔ Managers ready");
+        logger.info("✔ Managers ready");
     }
 
-    // Public API
+    // ---------------------------------------------
+    // PUBLIC APIs
+    // ---------------------------------------------
     hash(value: string) {
         return this.hashManager.hash(value);
     }
@@ -147,21 +175,33 @@ this.rateLimiterFallback = new ExpressRLAdapter(this.config.rateLimiter);
         return this.validatorManager.validate(schema);
     }
 
-    // EXPRESS MIDDLEWARE PIPELINE
+    // ---------------------------------------------
+    // EXPRESS PIPELINE
+    // ---------------------------------------------
     middleware() {
         const chain: any[] = [];
 
+        // JSON parsing (native express)
+        chain.push(express.json());
+        chain.push(express.urlencoded({ extended: true }));
+
+        // Security middlewares
         if (this.config.enableHelmet) chain.push(helmet());
         if (this.config.enableHPP) chain.push(hpp());
         if (this.config.enableCORS) chain.push(cors());
 
+        // Sanitizer
         if (this.config.enableSanitizer) {
-            chain.push(this.sanitizerPrimary.middleware());
+            chain.push(this.sanitizerManager.middleware());
         }
 
+        // Rate Limiter
         if (this.config.enableRateLimiter) {
             chain.push(this.rateLimitManager.middleware());
         }
+
+        // Error Handler
+        chain.push(errorHandler);
 
         return chain;
     }
