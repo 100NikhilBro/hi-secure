@@ -3,63 +3,73 @@ import { AdapterError } from "../core/errors/AdapterError";
 import { logger } from "../logging";
 
 export class SanitizeHtmlAdapter {
-    private options: sanitizeHtml.IOptions;
+    private globalOptions: sanitizeHtml.IOptions;
 
     constructor(options: sanitizeHtml.IOptions = {}) {
-        this.options = options;
+        this.globalOptions = options;
     }
 
-    sanitize(input: string): string {
+    /**
+     * Sanitize a string with merged global + dynamic options
+     */
+    sanitize(input: string, dynamicOptions?: any): string {
         try {
-            const result = sanitizeHtml(input, this.options);
+            const opts = { ...this.globalOptions, ...(dynamicOptions || {}) };
 
-            // sanitize-html always returns string but enforce for TS
-            return typeof result === "string" ? result : String(result);
+            const clean = sanitizeHtml(input, opts);
+
+            return typeof clean === "string" ? clean : String(clean);
 
         } catch (err: any) {
             logger.error("❌ sanitize-html failed", {
                 error: err?.message || err,
-                inputPreview: typeof input === "string" ? input.slice(0, 100) : undefined
+                preview: typeof input === "string" ? input.slice(0, 100) : undefined
             });
 
             throw new AdapterError("sanitize-html adapter failed.");
         }
     }
 
-    // Recursively sanitize nested objects & arrays
-    private deepSanitize(obj: any): any {
+    /**
+     * Deep sanitize nested objects, arrays, strings
+     */
+    private deepSanitize(obj: any, dynamicOptions?: any): any {
         if (typeof obj === "string") {
-            return this.sanitize(obj);
+            return this.sanitize(obj, dynamicOptions);
         }
 
         if (Array.isArray(obj)) {
-            return obj.map((item) => this.deepSanitize(item));
+            return obj.map((item) => this.deepSanitize(item, dynamicOptions));
         }
 
         if (obj && typeof obj === "object") {
-            const cleaned: any = {};
+            const result: any = {};
             for (const key of Object.keys(obj)) {
-                cleaned[key] = this.deepSanitize(obj[key]);
+                result[key] = this.deepSanitize(obj[key], dynamicOptions);
             }
-            return cleaned;
+            return result;
         }
 
-        return obj; // primitive (number, boolean, null, etc.)
+        return obj;
     }
 
-    middleware() {
+    /**
+     * Middleware wrapper with dynamic per-route options
+     */
+    middleware(dynamicOptions?: any) {
         return (req: any, _res: any, next: any) => {
             try {
                 if (req.body) {
-                    req.body = this.deepSanitize(req.body);
+                    req.body = this.deepSanitize(req.body, dynamicOptions);
 
-                    logger.debug("🧼 Request sanitized successfully", {
+                    logger.debug("🧼 sanitize-html applied", {
                         keys: Object.keys(req.body)
                     });
                 }
                 next();
+
             } catch (err: any) {
-                logger.error("❌ Sanitizer middleware error", {
+                logger.error("❌ sanitize-html middleware failed", {
                     error: err?.message || err
                 });
                 next(err);

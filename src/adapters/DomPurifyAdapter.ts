@@ -7,51 +7,55 @@ const window = new JSDOM("").window;
 const DOMPurify = createDOMPurify(window as any);
 
 export class DomPurifyAdapter {
-    private options: any;
+    private globalOptions: any;
 
     constructor(options: any = {}) {
-        this.options = options;
+        this.globalOptions = options;
     }
 
-    sanitize(input: string): string {
+    /**
+     * Sanitize a string with global + dynamic merged options
+     */
+    sanitize(input: string, dynamicOptions?: any): string {
         try {
-            if (typeof input !== "string") {
-                logger.warn("⚠ DomPurify: Non-string value skipped", {
-                    received: typeof input
-                });
-                return input as any;
-            }
+            if (typeof input !== "string") return input as any;
 
-            // FIX: convert TrustedHTML → string
-            const clean = DOMPurify.sanitize(input, this.options);
+            const merged = { ...this.globalOptions, ...(dynamicOptions || {}) };
 
-            return clean.toString(); // ⬅⬅ THE FIX
+            const clean = DOMPurify.sanitize(input, merged);
+
+            return clean.toString();
+
         } catch (err: any) {
-            logger.error("❌ DOMPurify sanitizer failed", {
-                error: err?.message || err,
-                inputPreview: input?.slice?.(0, 100)
+            logger.error("❌ DomPurify sanitize failed", {
+                error: err?.message,
+                preview: input?.slice?.(0, 80)
             });
-
-            throw new AdapterError("DOMPurify sanitizer failed.");
+            throw new AdapterError("DomPurify sanitizer failed.");
         }
     }
 
-    middleware() {
-        return (req: any, res: any, next: any) => {
+    /**
+     * Middleware wrapper WITH dynamic options
+     */
+    middleware(dynamicOptions?: any) {
+        return (req: any, _res: any, next: any) => {
             try {
                 const body = req.body;
 
                 if (body && typeof body === "object") {
                     for (const key of Object.keys(body)) {
-                        const value = body[key];
+                        const val = body[key];
 
-                        if (typeof value === "string") {
-                            body[key] = this.sanitize(value);
+                        if (typeof val === "string") {
+                            body[key] = this.sanitize(val, dynamicOptions);
                         }
 
-                        if (Array.isArray(value)) {
-                            body[key] = value.map(v =>
-                                typeof v === "string" ? this.sanitize(v) : v
+                        if (Array.isArray(val)) {
+                            body[key] = val.map((v) =>
+                                typeof v === "string"
+                                    ? this.sanitize(v, dynamicOptions)
+                                    : v
                             );
                         }
                     }
@@ -59,7 +63,7 @@ export class DomPurifyAdapter {
 
                 next();
             } catch (err: any) {
-                logger.error("❌ DOMPurify middleware failed", {
+                logger.error("❌ DomPurify middleware failed", {
                     error: err?.message || err
                 });
                 next(err);

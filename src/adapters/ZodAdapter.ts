@@ -3,33 +3,42 @@ import { ValidationError } from "../core/errors/ValidationError";
 import { logger } from "../logging";
 
 export class ZodAdapter {
-    validate(schema: ZodSchema) {
+    private globalSchema?: ZodSchema;
+
+    constructor(globalSchema?: ZodSchema) {
+        this.globalSchema = globalSchema as any;
+    }
+
+    /**
+     * Validate with global + dynamic schema (dynamic overrides global)
+     */
+    validate(dynamicSchema?: ZodSchema) {
         return (req: any, res: any, next: any) => {
+            const schema = dynamicSchema || this.globalSchema;
+
+            if (!schema) return next(); // no validation for this route
+
             const result = schema.safeParse(req.body);
 
-            if (result.success) {
-                return next();
-            }
+            if (result.success) return next();
 
-            // result.error is guaranteed to be ZodError
-            const zodError: ZodError = result.error;
+            const zodErr: ZodError = result.error;
 
-            const issues = zodError.issues.map(issue => ({
+            const issues = zodErr.issues.map(issue => ({
                 message: issue.message,
                 path: issue.path.join("."),
-                code: issue.code,
+                code: issue.code
             }));
 
             logger.warn("⚠ Zod validation failed", {
                 path: req.path,
                 method: req.method,
                 issues,
-                bodyPreview: JSON.stringify(req.body).slice(0, 200)
+                preview: JSON.stringify(req.body).slice(0, 200)
             });
 
-            // Throw clean error to middleware
             return next(
-                new ValidationError(issues[0]?.message || "Validation failed")
+                new ValidationError(issues[0]?.message || "Validation failed.")
             );
         };
     }

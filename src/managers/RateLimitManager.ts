@@ -1,9 +1,10 @@
+// src/managers/RateLimitManager.ts
 import { HiSecureConfig } from "../core/config";
 import { AdapterError } from "../core/errors/AdapterError";
 import { logger } from "../logging";
 
 interface RateLimiterAdapter {
-    getMiddleware: () => any;
+    getMiddleware: (options?: any) => any;
 }
 
 export class RateLimitManager {
@@ -21,38 +22,73 @@ export class RateLimitManager {
         this.fallbackAdapter = fallbackAdapter;
     }
 
-    /**
-     * Returns middleware from primary adapter.
-     * Fallback is used if primary adapter fails.
-     */
-    middleware() {
+    middleware(opts?: { mode?: "strict" | "relaxed" | undefined; options?: any }) {
+        let final: any = {};
+
+        // ---------------------------
+        // MODE PRESETS
+        // ---------------------------
+        if (opts?.mode === "strict") {
+            final = {
+                windowMs: 10_000,
+                max: 5,
+                points: 5,
+                duration: 10
+            };
+        }
+
+        if (opts?.mode === "relaxed") {
+            final = {
+                windowMs: 60_000,
+                max: 100,
+                points: 100,
+                duration: 60
+            };
+        }
+
+        // ---------------------------
+        // CUSTOM OPTIONS
+        // ---------------------------
+        if (opts?.options) {
+            final = { ...final, ...opts.options };
+        }
+
+        // ---------------------------
+        // DEFAULT OPTIONS (opts undefined)
+        // ---------------------------
+        if (!opts) {
+            final = {
+                windowMs: this.config.windowMs,
+                max: this.config.maxRequests,
+                duration: this.config.windowMs / 1000,
+                points: this.config.maxRequests
+            };
+        }
+
+        // ---------------------------
+        // PRIMARY → FALLBACK
+        // ---------------------------
         try {
-            logger.info("📌 RateLimiter: Using primary adapter");
-            return this.primaryAdapter.getMiddleware();
+            logger.info("📌 RateLimiter: primary adapter", final);
+            return this.primaryAdapter.getMiddleware(final);
 
         } catch (err: any) {
-            logger.warn("⚠ Primary RateLimiter adapter failed → switching to fallback", {
+            logger.warn("⚠ Primary rate limiter failed → fallback", {
                 error: err?.message
             });
 
             if (!this.fallbackAdapter) {
-                throw new AdapterError(
-                    "RateLimiter failed and fallback adapter is not configured."
-                );
+                throw new AdapterError("Rate limiters failed; no fallback adapter.");
             }
 
             try {
-                logger.info("📌 RateLimiter: Using fallback adapter");
-                return this.fallbackAdapter.getMiddleware();
-
+                logger.info("📌 Using fallback rate limiter", final);
+                return this.fallbackAdapter.getMiddleware(final);
             } catch (fallbackErr: any) {
-                logger.error("❌ Fallback RateLimiter adapter also failed", {
+                logger.error("❌ Fallback limiter also failed", {
                     error: fallbackErr?.message
                 });
-
-                throw new AdapterError(
-                    "Both primary and fallback RateLimiter adapters failed."
-                );
+                throw new AdapterError("Both primary and fallback limiters failed.");
             }
         }
     }

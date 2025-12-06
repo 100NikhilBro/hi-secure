@@ -1,9 +1,174 @@
+// import { Request, Response, NextFunction } from "express";
+// import { logger } from "../logging";
+// import { AdapterError } from "../core/errors/AdapterError";
+// import { ValidationError } from "../core/errors/ValidationError";
+// import { SanitizerError } from "../core/errors/SanitizerError";
+// import { SecurityError } from "../core/errors/SecurityError";
+
+// export function errorHandler(
+//     err: any,
+//     req: Request,
+//     res: Response,
+//     _next: NextFunction
+// ) {
+//     // Normalize unknown errors
+//     const errorMessage =
+//         typeof err === "string"
+//             ? err
+//             : err?.message || "Unknown error occurred";
+
+//     const errorStack =
+//         err instanceof Error && err.stack
+//             ? err.stack.split("\n").slice(0, 2).join(" | ")
+//             : undefined;
+
+//     // Log error centrally
+//     logger.error("❌ HiSecure Error Captured", {
+//         message: errorMessage,
+//         path: req.path,
+//         method: req.method,
+//         stack: errorStack,
+//         raw: err
+//     });
+
+//     // ------------------------------
+//     // CLASSIFIED ERROR RESPONSES
+//     // ------------------------------
+
+//     if (err instanceof ValidationError) {
+//         return res.status(400).json({
+//             success: false,
+//             error: "VALIDATION_ERROR",
+//             message: errorMessage
+//         });
+//     }
+
+//     if (err instanceof SanitizerError) {
+//         return res.status(400).json({
+//             success: false,
+//             error: "SANITIZER_ERROR",
+//             message: errorMessage
+//         });
+//     }
+
+//     if (err instanceof AdapterError) {
+//         return res.status(500).json({
+//             success: false,
+//             error: "ADAPTER_ERROR",
+//             message: errorMessage
+//         });
+//     }
+
+//     if (err instanceof SecurityError) {
+//         return res.status(500).json({
+//             success: false,
+//             error: "SECURITY_ERROR",
+//             message: errorMessage
+//         });
+//     }
+
+//     // ------------------------------
+//     // UNEXPECTED ERROR
+//     // ------------------------------
+//     return res.status(500).json({
+//         success: false,
+//         error: "INTERNAL_SERVER_ERROR",
+//         message: "An unexpected error occurred in HiSecure middleware."
+//     });
+// }
+
+
+
+
+// import { Request, Response, NextFunction } from "express";
+// import { logger } from "../logging";
+// import { AdapterError } from "../core/errors/AdapterError";
+// import { ValidationError } from "../core/errors/ValidationError";
+// import { SanitizerError } from "../core/errors/SanitizerError";
+// import { SecurityError } from "../core/errors/SecurityError";
+
+// export function errorHandler(
+//     err: any,
+//     req: Request,
+//     res: Response,
+//     _next: NextFunction
+// ) {
+//     // Normalize unknown errors
+//     const errorMessage =
+//         typeof err === "string"
+//             ? err
+//             : err?.message || "Unknown error occurred";
+
+//     const errorStack =
+//         err instanceof Error && err.stack
+//             ? err.stack.split("\n").slice(0, 2).join(" | ")
+//             : undefined;
+
+//     // Log error centrally
+//     logger.error("❌ HiSecure Error Captured", {
+//         message: errorMessage,
+//         path: req.path,
+//         method: req.method,
+//         stack: errorStack,
+//         raw: err
+//     });
+
+//     // ------------------------------
+//     // CLASSIFIED ERROR RESPONSES
+//     // ------------------------------
+
+//     if (err instanceof ValidationError) {
+//         return res.status(400).json({
+//             success: false,
+//             error: "VALIDATION_ERROR",
+//             message: errorMessage
+//         });
+//     }
+
+//     if (err instanceof SanitizerError) {
+//         return res.status(400).json({
+//             success: false,
+//             error: "SANITIZER_ERROR",
+//             message: errorMessage
+//         });
+//     }
+
+//     if (err instanceof AdapterError) {
+//         return res.status(500).json({
+//             success: false,
+//             error: "ADAPTER_ERROR",
+//             message: errorMessage
+//         });
+//     }
+
+//     if (err instanceof SecurityError) {
+//         return res.status(500).json({
+//             success: false,
+//             error: "SECURITY_ERROR",
+//             message: errorMessage
+//         });
+//     }
+
+//     // ------------------------------
+//     // UNEXPECTED ERROR
+//     // ------------------------------
+//     return res.status(500).json({
+//         success: false,
+//         error: "INTERNAL_SERVER_ERROR",
+//         message: "An unexpected error occurred in HiSecure middleware."
+//     });
+// }
+
+
+
 import { Request, Response, NextFunction } from "express";
 import { logger } from "../logging";
+
 import { AdapterError } from "../core/errors/AdapterError";
 import { ValidationError } from "../core/errors/ValidationError";
 import { SanitizerError } from "../core/errors/SanitizerError";
 import { SecurityError } from "../core/errors/SecurityError";
+import { HttpError } from "../core/errors/HttpErrror";
 
 export function errorHandler(
     err: any,
@@ -11,68 +176,90 @@ export function errorHandler(
     res: Response,
     _next: NextFunction
 ) {
-    // Normalize unknown errors
-    const errorMessage =
+    const message =
         typeof err === "string"
             ? err
-            : err?.message || "Unknown error occurred";
+            : err?.message || "Unknown error";
 
-    const errorStack =
+    const stack =
         err instanceof Error && err.stack
             ? err.stack.split("\n").slice(0, 2).join(" | ")
             : undefined;
 
-    // Log error centrally
-    logger.error("❌ HiSecure Error Captured", {
-        message: errorMessage,
+    // Unified logging
+    logger.error("❌ HiSecure Error", {
+        type: err?.name || "UnknownError",
+        message,
+        status: err?.status,
+        code: err?.code,
         path: req.path,
         method: req.method,
-        stack: errorStack,
-        raw: err
+        stack,
+        raw: err,
     });
 
-    // ------------------------------
-    // CLASSIFIED ERROR RESPONSES
-    // ------------------------------
+    // ---------------------------------------------------
+    // 1. HttpError (developer thrown)
+    // ---------------------------------------------------
+    if (err instanceof HttpError) {
+        return res.status(err.status).json({
+            success: false,
+            error: err.code,
+            message: err.message,
+            details: err.details || undefined,
+        });
+    }
 
+    // ---------------------------------------------------
+    // 2. Validation Errors
+    // ---------------------------------------------------
     if (err instanceof ValidationError) {
         return res.status(400).json({
             success: false,
             error: "VALIDATION_ERROR",
-            message: errorMessage
+            message,
         });
     }
 
+    // ---------------------------------------------------
+    // 3. Sanitizer Errors
+    // ---------------------------------------------------
     if (err instanceof SanitizerError) {
         return res.status(400).json({
             success: false,
             error: "SANITIZER_ERROR",
-            message: errorMessage
+            message,
         });
     }
 
+    // ---------------------------------------------------
+    // 4. Adapter Errors (hashing, rate-limit, sanitizer, validator ...)
+    // ---------------------------------------------------
     if (err instanceof AdapterError) {
         return res.status(500).json({
             success: false,
             error: "ADAPTER_ERROR",
-            message: errorMessage
+            message,
         });
     }
 
+    // ---------------------------------------------------
+    // 5. Security Errors (internal library security logic)
+    // ---------------------------------------------------
     if (err instanceof SecurityError) {
         return res.status(500).json({
             success: false,
             error: "SECURITY_ERROR",
-            message: errorMessage
+            message,
         });
     }
 
-    // ------------------------------
-    // UNEXPECTED ERROR
-    // ------------------------------
+    // ---------------------------------------------------
+    // 6. Fallback → Unexpected
+    // ---------------------------------------------------
     return res.status(500).json({
         success: false,
         error: "INTERNAL_SERVER_ERROR",
-        message: "An unexpected error occurred in HiSecure middleware."
+        message: "An unexpected error occurred in HiSecure.",
     });
 }

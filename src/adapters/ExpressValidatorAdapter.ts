@@ -3,7 +3,22 @@ import { ValidationError } from "../core/errors/ValidationError";
 import { logger } from "../logging";
 
 export class ExpressValidatorAdapter {
-    validate(schema: any[]) {
+    private globalSchema?: any[];
+
+    constructor(globalSchema?: any[]) {
+        this.globalSchema = globalSchema as any;;
+    }
+
+    /**
+     * Dynamic schema override
+     */
+    validate(dynamicSchema?: any[]) {
+        const schema = dynamicSchema || this.globalSchema;
+
+        if (!schema || !Array.isArray(schema)) {
+            return (req: any, res: any, next: any) => next();
+        }
+
         return [
             ...schema,
 
@@ -11,20 +26,17 @@ export class ExpressValidatorAdapter {
                 const errors = validationResult(req);
 
                 if (!errors.isEmpty()) {
-                    const errorList = errors.array().map(err => ({
+                    const formatted = errors.array().map(err => ({
                         message: err.msg,
-                        // field: err.param,
-                        // location: err.location
                     }));
 
-                    logger.warn("⚠ express-validator validation failed", {
+                    logger.warn("⚠ express-validator failed", {
                         path: req.path,
                         method: req.method,
-                        errors: errorList,
-                        bodyPreview: JSON.stringify(req.body).slice(0, 200)
+                        errors: formatted,
+                        preview: JSON.stringify(req.body).slice(0, 200)
                     });
 
-                    // ⭐ Correct middleware behavior — pass error to central handler
                     return next(new ValidationError("Validation failed."));
                 }
 
