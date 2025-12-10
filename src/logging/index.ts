@@ -1,2 +1,2 @@
-export * from "./winstonSetup";
-export * from "./morganSetup";
+export * from "./winstonSetup.js";
+export * from "./morganSetup.js";

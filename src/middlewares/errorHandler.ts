@@ -164,11 +164,11 @@
 import { Request, Response, NextFunction } from "express";
 import { logger } from "../logging";
 
-import { AdapterError } from "../core/errors/AdapterError";
-import { ValidationError } from "../core/errors/ValidationError";
-import { SanitizerError } from "../core/errors/SanitizerError";
-import { SecurityError } from "../core/errors/SecurityError";
-import { HttpError } from "../core/errors/HttpErrror";
+import { AdapterError } from "../core/errors/AdapterError.js";
+import { ValidationError } from "../core/errors/ValidationError.js";
+import { SanitizerError } from "../core/errors/SanitizerError.js";
+import { SecurityError } from "../core/errors/SecurityError.js";
+import { HttpError } from "../core/errors/HttpErrror.js";
 
 export function errorHandler(
     err: any,

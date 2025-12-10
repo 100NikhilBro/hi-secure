@@ -1,4 +1,4 @@
-import { ERROR_CODES } from "../constants";
+import { ERROR_CODES } from "../constants.js";
 
 export class AdapterError extends Error {
     code: string;

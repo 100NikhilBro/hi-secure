@@ -1,8 +1,9 @@
-// import { SecureOptions } from "../core/types/SecureOptions";
+
+// import { SecureOptions } from "../core/types/SecureOptions.js";
 
 // export interface NormalizedOptions {
 //     cors: { enabled: boolean; options?: any };
-//     rateLimit: { enabled: boolean; mode?: "strict" | "relaxed"; options?: any };
+//     rateLimit: { enabled: boolean; mode?: "strict" | "relaxed" | undefined; options?: any };
 //     sanitize: { enabled: boolean };
 //     validate: { enabled: boolean; schema?: any };
 //     json: { enabled: boolean; options?: any };
@@ -15,12 +16,10 @@
 //     if (input === false) {
 //         return {
 //             cors: { enabled: false },
-//             rateLimit: { enabled: false },
+//             rateLimit: { enabled: false, mode: undefined, options: undefined },
 //             sanitize: { enabled: false },
 //             validate: { enabled: false },
 //             json: { enabled: false },
-
-//             // NEW AUTH
 //             auth: { enabled: false, required: true }
 //         };
 //     }
@@ -49,37 +48,57 @@
 //             options: typeof opts.json === "object" ? opts.json : undefined
 //         },
 
-//         /** NEW AUTH NORMALIZATION */
 //         auth: normalizeAuth(opts.auth)
 //     };
 // }
 
+// // ---------------------------------------------------------------
+// // RATE LIMIT — EXACT TYPES, NO TS ERROR
+// // ---------------------------------------------------------------
+// function normalizeRateLimit(value: SecureOptions["rateLimit"]): {
+//     enabled: boolean;
+//     mode?: "strict" | "relaxed" | undefined;
+//     options?: any;
+// } {
+//     if (value === false) {
+//         return { enabled: false, mode: undefined, options: undefined };
+//     }
 
+//     if (value === "strict") {
+//         return {
+//             enabled: true,
+//             mode: "strict",
+//             options: { max: 5, windowMs: 10000 }
+//         };
+//     }
 
+//     if (value === "relaxed") {
+//         return {
+//             enabled: true,
+//             mode: "relaxed",
+//             options: { max: 100, windowMs: 60000 }
+//         };
+//     }
 
+//     if (typeof value === "object") {
+//         return {
+//             enabled: true,
+//             mode: undefined,   // VERY IMPORTANT!
+//             options: value
+//         };
+//     }
 
-
-// // ------------------------------------------
-// // ONLY RATE LIMITER — (UNCHANGED)
-// // ------------------------------------------
-// function normalizeRateLimit(value: SecureOptions["rateLimit"]) {
-//     if (value === false) return { enabled: false };
-
-//     if (value === "strict")
-//         return { enabled: true, mode: "strict", options: { max: 5, windowMs: 10000 } };
-
-//     if (value === "relaxed")
-//         return { enabled: true, mode: "relaxed", options: { max: 100, windowMs: 60000 } };
-
-//     if (typeof value === "object")
-//         return { enabled: true, options: value };
-
-//     return { enabled: true };
+//     // Default → enabled and optional fields omitted
+//     return {
+//         enabled: true,
+//         mode: undefined,
+//         options: undefined
+//     };
 // }
 
-// // ------------------------------------------
-// // NEW AUTH NORMALIZER
-// // ------------------------------------------
+// // ---------------------------------------------------------------
+// // AUTH NORMALIZER — EXACT FOR useSecure
+// // ---------------------------------------------------------------
 // function normalizeAuth(value: SecureOptions["auth"]) {
 //     if (value === false) return { enabled: false, required: true };
 
@@ -88,34 +107,41 @@
 
 //     return {
 //         enabled: true,
-//         required: value.required !== false // default → required:true
+//         required: value.required !== false
 //     };
 // }
 
 
 
-import { SecureOptions } from "../core/types/SecureOptions";
+
+// src/utils/normalizeOptions.ts
+import { 
+    SecureOptions,
+    AuthOptions,        // ✅ ADD THIS
+    RateLimitOptions,   // ✅ ADD THIS  
+    SanitizeOptions     // ✅ ADD THIS
+} from "../core/types/SecureOptions.js";
 
 export interface NormalizedOptions {
-    cors: { enabled: boolean; options?: any };
-    rateLimit: { enabled: boolean; mode?: "strict" | "relaxed" | undefined; options?: any };
-    sanitize: { enabled: boolean };
+    cors: { enabled: boolean; options?: object };
+    rateLimit: { enabled: boolean; mode?: "strict" | "relaxed"; options?: RateLimitOptions };
+    sanitize: { enabled: boolean; options?: SanitizeOptions };
     validate: { enabled: boolean; schema?: any };
-    json: { enabled: boolean; options?: any };
-
-    /** NEW */
-    auth: { enabled: boolean; required: boolean };
+    json: { enabled: boolean; options?: object };
+    auth: { enabled: boolean; required: boolean; roles?: string[] };
+    compression: { enabled: boolean; options?: object };
 }
 
 export function normalizeOptions(input?: SecureOptions | false): NormalizedOptions {
     if (input === false) {
         return {
             cors: { enabled: false },
-            rateLimit: { enabled: false, mode: undefined, options: undefined },
+            rateLimit: { enabled: false },
             sanitize: { enabled: false },
             validate: { enabled: false },
             json: { enabled: false },
-            auth: { enabled: false, required: true }
+            auth: { enabled: false, required: false },
+            compression: { enabled: false }
         };
     }
 
@@ -130,7 +156,8 @@ export function normalizeOptions(input?: SecureOptions | false): NormalizedOptio
         rateLimit: normalizeRateLimit(opts.rateLimit),
 
         sanitize: {
-            enabled: opts.sanitize === undefined ? true : opts.sanitize !== false
+            enabled: opts.sanitize === undefined ? true : opts.sanitize !== false,
+            options: typeof opts.sanitize === "object" ? opts.sanitize : undefined
         },
 
         validate: {
@@ -143,22 +170,18 @@ export function normalizeOptions(input?: SecureOptions | false): NormalizedOptio
             options: typeof opts.json === "object" ? opts.json : undefined
         },
 
-        auth: normalizeAuth(opts.auth)
+        auth: normalizeAuth(opts.auth),
+
+        compression: {
+            enabled: opts.compression === undefined ? true : opts.compression !== false,
+            options: typeof opts.compression === "object" ? opts.compression : undefined
+        }
     };
 }
 
-// ---------------------------------------------------------------
-// RATE LIMIT — EXACT TYPES, NO TS ERROR
-// ---------------------------------------------------------------
-function normalizeRateLimit(value: SecureOptions["rateLimit"]): {
-    enabled: boolean;
-    mode?: "strict" | "relaxed" | undefined;
-    options?: any;
-} {
-    if (value === false) {
-        return { enabled: false, mode: undefined, options: undefined };
-    }
-
+function normalizeRateLimit(value: SecureOptions["rateLimit"]): NormalizedOptions["rateLimit"] {
+    if (value === false) return { enabled: false };
+    
     if (value === "strict") {
         return {
             enabled: true,
@@ -166,7 +189,7 @@ function normalizeRateLimit(value: SecureOptions["rateLimit"]): {
             options: { max: 5, windowMs: 10000 }
         };
     }
-
+    
     if (value === "relaxed") {
         return {
             enabled: true,
@@ -174,34 +197,69 @@ function normalizeRateLimit(value: SecureOptions["rateLimit"]): {
             options: { max: 100, windowMs: 60000 }
         };
     }
-
+    
     if (typeof value === "object") {
+        const val = value as RateLimitOptions;
+        const { mode, ...options } = val;
         return {
             enabled: true,
-            mode: undefined,   // VERY IMPORTANT!
-            options: value
+            mode: (mode === "strict" || mode === "relaxed") ? mode : undefined,
+            options
         };
     }
+    
+    return { enabled: true };
+}
 
-    // Default → enabled and optional fields omitted
+function normalizeAuth(value: SecureOptions["auth"]): NormalizedOptions["auth"] {
+    if (value === false) {
+        return { enabled: false, required: false };
+    }
+    
+    if (value === true || value === undefined) {
+        return { enabled: true, required: true };
+    }
+    
+    const authOptions = value as AuthOptions;
+    const enabled = authOptions.required !== false;
+    
     return {
-        enabled: true,
-        mode: undefined,
-        options: undefined
+        enabled,
+        required: enabled,
+        roles: authOptions.roles
     };
 }
 
-// ---------------------------------------------------------------
-// AUTH NORMALIZER — EXACT FOR useSecure
-// ---------------------------------------------------------------
-function normalizeAuth(value: SecureOptions["auth"]) {
-    if (value === false) return { enabled: false, required: true };
-
-    if (value === true || value === undefined)
-        return { enabled: true, required: true };
-
-    return {
-        enabled: true,
-        required: value.required !== false
+export function getPresetOptions(preset: 'api' | 'strict' | 'public'): NormalizedOptions {
+    const presets = {
+        api: {
+            cors: { enabled: true, options: { origin: '*' } },
+            rateLimit: { enabled: true, mode: 'relaxed' as const },
+            sanitize: { enabled: true },
+            validate: { enabled: false },
+            json: { enabled: true },
+            auth: { enabled: false, required: false },
+            compression: { enabled: true }
+        },
+        strict: {
+            cors: { enabled: true, options: { origin: process.env.ALLOWED_ORIGIN || '*' } },
+            rateLimit: { enabled: true, mode: 'strict' as const },
+            sanitize: { enabled: true },
+            validate: { enabled: true },
+            json: { enabled: true },
+            auth: { enabled: true, required: true },
+            compression: { enabled: true }
+        },
+        public: {
+            cors: { enabled: true, options: { origin: '*' } },
+            rateLimit: { enabled: true },
+            sanitize: { enabled: false },
+            validate: { enabled: false },
+            json: { enabled: true },
+            auth: { enabled: false, required: false },
+            compression: { enabled: true }
+        }
     };
+    
+    return presets[preset] || presets.api;
 }

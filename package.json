@@ -1,28 +1,27 @@
 {
     "name": "hi-secure",
     "version": "1.0.0",
+    "type": "module",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "scripts": {
         "build": "tsc",
-        "dev": "ts-node src/index.ts"
+        "dev": "tsx watch src/index.ts",
+        "start": "node dist/index.js"
     },
-    "keywords": [],
-    "author": "",
-    "license": "ISC",
-    "description": "",
+    "peerDependencies": {
+        "express": "^4.17.0 || ^5.0.0"
+    },
     "dependencies": {
-        "@types/jsonwebtoken": "^9.0.10",
         "argon2": "^0.44.0",
         "bcryptjs": "^3.0.3",
+        "compression": "^1.8.1",
         "cors": "^2.8.5",
-        "dompurify": "^3.3.0",
         "express-rate-limit": "^8.2.1",
         "express-validator": "^7.3.1",
         "google-auth-library": "^10.5.0",
         "helmet": "^8.1.0",
         "hpp": "^0.2.3",
-        "jsdom": "^27.2.0",
         "jsonwebtoken": "^9.0.3",
         "morgan": "^1.10.1",
         "nanoid": "^5.1.6",
@@ -31,17 +30,22 @@
         "sanitize-html": "^2.17.0",
         "uuid": "^13.0.0",
         "winston": "^3.18.3",
+        "xss": "^1.0.15",
         "zod": "^4.1.13"
     },
     "devDependencies": {
+        "@types/compression": "^1.8.1",
         "@types/cors": "^2.8.19",
         "@types/express": "^5.0.6",
         "@types/hpp": "^0.2.7",
-        "@types/jsdom": "^27.0.0",
+        "@types/jsonwebtoken": "^9.0.10",
         "@types/morgan": "^1.9.10",
         "@types/node": "^24.10.1",
         "@types/sanitize-html": "^2.16.0",
-        "ts-node": "^10.9.2",
+        "@types/uuid": "^10.0.0",
+        "@types/winston": "^3.18.0",
+        "express": "^5.2.1",
+        "tsx": "^4.19.3",
         "typescript": "^5.9.3"
     }
 }

@@ -1,15 +1,17 @@
-// src/index.ts
-import { HiSecure } from "./core/HiSecure";
-import { useSecure } from "./core/useSecure";
+// src/index.ts - MAIN ENTRY POINT
+import { HiSecure } from "./core/HiSecure.js";
+import { useSecure, secureRoute } from "./core/useSecure.js";
 
-// Create instance with default configuration
-const hisecure = new HiSecure();
-hisecure.init();
+// Export the singleton instance for quick usage
+const hiSecure = HiSecure.getInstance();
 
-console.log("🔐 HiSecure initialized");
+// Export everything
+export { 
+    HiSecure,        // Class for advanced usage
+    hiSecure,        // Singleton instance
+    useSecure,       // Legacy function (deprecated)
+    secureRoute      // Route-level security helper
+};
 
-// Export class, instance, and helper
-export { HiSecure, hisecure, useSecure };
-
-// Default export is the instance (common pattern)
-export default hisecure;
+// Default export is the singleton instance
+export default hiSecure;
