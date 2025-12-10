@@ -1,0 +1,41 @@
+import argon2 from "argon2";
+import { AdapterError } from "../core/errors/AdapterError";
+import { logger } from "../logging";
+
+export class ArgonAdapter {
+    private options: argon2.Options | undefined;
+
+    constructor(options?: argon2.Options) {
+        if (options) {
+            this.options = options;
+        }
+    }
+
+    async hash(value: string): Promise<string> {
+        try {
+            return this.options
+                ? await argon2.hash(value, this.options)
+                : await argon2.hash(value); // avoid passing undefined
+        } catch (err: any) {
+            logger.error("❌ Argon2 hashing failed", {
+                error: err?.message || err
+            });
+            throw new AdapterError("Argon2 hashing failed.");
+        }
+    }
+
+    async verify(value: string, hashed: string): Promise<boolean> {
+        try {
+            if (!hashed || typeof hashed !== "string") {
+                throw new AdapterError("Invalid hash provided for verification.");
+            }
+
+            return await argon2.verify(hashed, value);
+        } catch (err: any) {
+            logger.error("❌ Argon2 verify failed", {
+                error: err?.message || err
+            });
+            throw new AdapterError("Argon2 verify failed.");
+        }
+    }
+}
