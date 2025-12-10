@@ -1,5 +1,7 @@
-// // // src/managers/RateLimitManager.ts
-// // import { HiSecureConfig } from "../core/config.js";
+
+
+// // // src/managers/RateLimitManager.ts - COMPLETE FIXED
+// // import { HiSecureConfig } from "../core/types/HiSecureConfig.js";
 // // import { AdapterError } from "../core/errors/AdapterError.js";
 // // import { logger } from "../logging";
 
@@ -22,56 +24,76 @@
 // //         this.fallbackAdapter = fallbackAdapter;
 // //     }
 
-// //     middleware(opts?: { mode?: "strict" | "relaxed" | undefined; options?: any }) {
-// //         let final: any = {};
+// //     middleware(opts?: { mode?: "strict" | "relaxed" | "api"; options?: any }) {
+// //         let finalOptions: any = {};
 
-// //         // ---------------------------
-// //         // MODE PRESETS
-// //         // ---------------------------
+// //         // Handle presets (user cannot override these)
 // //         if (opts?.mode === "strict") {
-// //             final = {
+// //             finalOptions = {
 // //                 windowMs: 10_000,
 // //                 max: 5,
 // //                 points: 5,
-// //                 duration: 10
+// //                 duration: 10,
+// //                 message: "Too many requests, please slow down."
 // //             };
-// //         }
-
-// //         if (opts?.mode === "relaxed") {
-// //             final = {
+// //         } else if (opts?.mode === "relaxed") {
+// //             finalOptions = {
 // //                 windowMs: 60_000,
 // //                 max: 100,
 // //                 points: 100,
-// //                 duration: 60
+// //                 duration: 60,
+// //                 message: "Rate limit exceeded."
 // //             };
-// //         }
-
-// //         // ---------------------------
-// //         // CUSTOM OPTIONS
-// //         // ---------------------------
-// //         if (opts?.options) {
-// //             final = { ...final, ...opts.options };
-// //         }
-
-// //         // ---------------------------
-// //         // DEFAULT OPTIONS (opts undefined)
-// //         // ---------------------------
-// //         if (!opts) {
-// //             final = {
+// //         } else if (opts?.mode === "api") {
+// //             finalOptions = {
+// //                 windowMs: 15 * 60 * 1000, // 15 minutes
+// //                 max: 100,
+// //                 points: 100,
+// //                 duration: 900,
+// //                 message: "API rate limit exceeded."
+// //             };
+// //         } else {
+// //             // Use defaults
+// //             finalOptions = {
 // //                 windowMs: this.config.windowMs,
 // //                 max: this.config.maxRequests,
 // //                 duration: this.config.windowMs / 1000,
-// //                 points: this.config.maxRequests
+// //                 points: this.config.maxRequests,
+// //                 message: this.config.message
 // //             };
 // //         }
 
-// //         // ---------------------------
-// //         // PRIMARY → FALLBACK
-// //         // ---------------------------
-// //         try {
-// //             logger.info("📌 RateLimiter: primary adapter", final);
-// //             return this.primaryAdapter.getMiddleware(final);
+// //         // Apply custom options WITHOUT overriding preset values
+// //         if (opts?.options) {
+// //             // Only allow specific overrides, not preset overrides
+// //             const allowedOverrides = ['message', 'skipFailedRequests', 'standardHeaders'];
+// //             for (const key of allowedOverrides) {
+// //                 if (opts.options[key] !== undefined) {
+// //                     finalOptions[key] = opts.options[key];
+// //                 }
+// //             }
+            
+// //             // Log if user tried to override preset
+// //             const attemptedOverrides = Object.keys(opts.options).filter(
+// //                 k => !allowedOverrides.includes(k) && k !== 'mode'
+// //             );
+// //             if (attemptedOverrides.length > 0) {
+// //                 logger.warn("⚠ Rate limit overrides ignored", { // ✅ FIXED: Better message
+// //                     preset: opts?.mode || 'default', // ✅ FIXED: Handle undefined
+// //                     ignoredOptions: attemptedOverrides
+// //                 });
+// //             }
+// //         }
 
+// //         // Try primary adapter
+// //         try {
+// //             logger.info("📌 Applying rate limiting", {
+// //                 mode: opts?.mode || 'default',
+// //                 windowMs: finalOptions.windowMs,
+// //                 max: finalOptions.max
+// //             });
+            
+// //             return this.primaryAdapter.getMiddleware(finalOptions);
 // //         } catch (err: any) {
 // //             logger.warn("⚠ Primary rate limiter failed → fallback", {
 // //                 error: err?.message
@@ -82,8 +104,8 @@
 // //             }
 
 // //             try {
-// //                 logger.info("📌 Using fallback rate limiter", final);
-// //                 return this.fallbackAdapter.getMiddleware(final);
+// //                 logger.info("📌 Using fallback rate limiter");
+// //                 return this.fallbackAdapter.getMiddleware(finalOptions);
 // //             } catch (fallbackErr: any) {
 // //                 logger.error("❌ Fallback limiter also failed", {
 // //                     error: fallbackErr?.message
@@ -129,7 +151,7 @@
 //                 windowMs: 10_000,
 //                 max: 5,
 //                 points: 5,
-//                 duration: 10,
+//                 // ❌ REMOVED: duration: 10,
 //                 message: "Too many requests, please slow down."
 //             };
 //         } else if (opts?.mode === "relaxed") {
@@ -137,7 +159,7 @@
 //                 windowMs: 60_000,
 //                 max: 100,
 //                 points: 100,
-//                 duration: 60,
+//                 // ❌ REMOVED: duration: 60,
 //                 message: "Rate limit exceeded."
 //             };
 //         } else if (opts?.mode === "api") {
@@ -145,7 +167,7 @@
 //                 windowMs: 15 * 60 * 1000, // 15 minutes
 //                 max: 100,
 //                 points: 100,
-//                 duration: 900,
+//                 // ❌ REMOVED: duration: 900,
 //                 message: "API rate limit exceeded."
 //             };
 //         } else {
@@ -153,16 +175,18 @@
 //             finalOptions = {
 //                 windowMs: this.config.windowMs,
 //                 max: this.config.maxRequests,
-//                 duration: this.config.windowMs / 1000,
+//                 // ❌ REMOVED: duration: this.config.windowMs / 1000,
 //                 points: this.config.maxRequests,
-//                 message: this.config.message
+//                 message: this.config.message,
+//                 standardHeaders: true,      // ✅ ADD
+//                 legacyHeaders: false        // ✅ ADD
 //             };
 //         }
 
 //         // Apply custom options WITHOUT overriding preset values
 //         if (opts?.options) {
 //             // Only allow specific overrides, not preset overrides
-//             const allowedOverrides = ['message', 'skipFailedRequests', 'standardHeaders'];
+//             const allowedOverrides = ['message', 'skipFailedRequests', 'standardHeaders', 'legacyHeaders'];
 //             for (const key of allowedOverrides) {
 //                 if (opts.options[key] !== undefined) {
 //                     finalOptions[key] = opts.options[key];
@@ -174,11 +198,19 @@
 //                 k => !allowedOverrides.includes(k) && k !== 'mode'
 //             );
 //             if (attemptedOverrides.length > 0) {
-//                 logger.warn("⚠ Rate limit preset overrides ignored", {
-//                     preset: opts.mode,
+//                 logger.warn("⚠ Rate limit overrides ignored", {
+//                     preset: opts?.mode || 'default',
 //                     ignoredOptions: attemptedOverrides
 //                 });
 //             }
+//         }
+
+//         // Add v8+ options if not present
+//         if (finalOptions.standardHeaders === undefined) {
+//             finalOptions.standardHeaders = true;
+//         }
+//         if (finalOptions.legacyHeaders === undefined) {
+//             finalOptions.legacyHeaders = false;
 //         }
 
 //         // Try primary adapter
@@ -214,7 +246,7 @@
 
 
 
-// src/managers/RateLimitManager.ts - COMPLETE FIXED
+// src/managers/RateLimitManager.ts - COMPLETELY FIXED
 import { HiSecureConfig } from "../core/types/HiSecureConfig.js";
 import { AdapterError } from "../core/errors/AdapterError.js";
 import { logger } from "../logging";
@@ -246,24 +278,21 @@ export class RateLimitManager {
             finalOptions = {
                 windowMs: 10_000,
                 max: 5,
-                points: 5,
-                duration: 10,
+                // ❌ REMOVED: points: 5,
                 message: "Too many requests, please slow down."
             };
         } else if (opts?.mode === "relaxed") {
             finalOptions = {
                 windowMs: 60_000,
                 max: 100,
-                points: 100,
-                duration: 60,
+                // ❌ REMOVED: points: 100,
                 message: "Rate limit exceeded."
             };
         } else if (opts?.mode === "api") {
             finalOptions = {
                 windowMs: 15 * 60 * 1000, // 15 minutes
                 max: 100,
-                points: 100,
-                duration: 900,
+                // ❌ REMOVED: points: 100,
                 message: "API rate limit exceeded."
             };
         } else {
@@ -271,16 +300,16 @@ export class RateLimitManager {
             finalOptions = {
                 windowMs: this.config.windowMs,
                 max: this.config.maxRequests,
-                duration: this.config.windowMs / 1000,
-                points: this.config.maxRequests,
-                message: this.config.message
+                message: this.config.message,
+                standardHeaders: true,      // ✅ ADD
+                legacyHeaders: false        // ✅ ADD
             };
         }
 
         // Apply custom options WITHOUT overriding preset values
         if (opts?.options) {
             // Only allow specific overrides, not preset overrides
-            const allowedOverrides = ['message', 'skipFailedRequests', 'standardHeaders'];
+            const allowedOverrides = ['message', 'skipFailedRequests', 'standardHeaders', 'legacyHeaders'];
             for (const key of allowedOverrides) {
                 if (opts.options[key] !== undefined) {
                     finalOptions[key] = opts.options[key];
@@ -292,11 +321,19 @@ export class RateLimitManager {
                 k => !allowedOverrides.includes(k) && k !== 'mode'
             );
             if (attemptedOverrides.length > 0) {
-                logger.warn("⚠ Rate limit overrides ignored", { // ✅ FIXED: Better message
-                    preset: opts?.mode || 'default', // ✅ FIXED: Handle undefined
+                logger.warn("⚠ Rate limit overrides ignored", {
+                    preset: opts?.mode || 'default',
                     ignoredOptions: attemptedOverrides
                 });
             }
+        }
+
+        // Add v8+ options if not present
+        if (finalOptions.standardHeaders === undefined) {
+            finalOptions.standardHeaders = true;
+        }
+        if (finalOptions.legacyHeaders === undefined) {
+            finalOptions.legacyHeaders = false;
         }
 
         // Try primary adapter
