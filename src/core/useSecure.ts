@@ -1,21 +1,19 @@
-// src/core/useSecure.ts - SIMPLER VERSION
-// This is now optional since HiSecure class has fluent API
-
-
 import { HiSecure } from "./HiSecure.js";
 import { SecureOptions } from "./types/SecureOptions.js";
 
 /**
  * @deprecated Use HiSecure.middleware() or fluent API instead
  */
+
 export function useSecure(options?: SecureOptions | "api" | "strict" | "public") {
     console.warn("⚠ useSecure() is deprecated. Use HiSecure.middleware() or fluent API methods.");
     return HiSecure.middleware(options);
 }
 
-/**
- * Legacy support - route-level security
- */
+
+//  Legacy support - route-level security
+
+
 export function secureRoute(options?: SecureOptions) {
     const chain: any[] = [];
     

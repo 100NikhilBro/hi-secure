@@ -15,7 +15,7 @@ export class ArgonAdapter {
         try {
             return this.options
                 ? await argon2.hash(value, this.options)
-                : await argon2.hash(value); // avoid passing undefined
+                : await argon2.hash(value);
         } catch (err: any) {
             logger.error("❌ Argon2 hashing failed", {
                 error: err?.message || err

@@ -1,4 +1,3 @@
-// src/core/HiSecure.ts - COMPLETELY FIXED
 import { HiSecureConfig } from "./types/HiSecureConfig.js";
 import { defaultConfig } from "./config.js";
 import { LIB_NAME, LIB_VERSION } from "./constants.js";
@@ -32,7 +31,7 @@ import compression from "compression";
 import { errorHandler } from "../middlewares/errorHandler.js";
 
 // Types
-import { SecureOptions, ValidationSchema, RateLimitOptions } from "./types/SecureOptions.js";
+import { SecureOptions, ValidationSchema} from "./types/SecureOptions.js";
 
 export class HiSecure {
     private static instance: HiSecure | null = null;
@@ -53,8 +52,6 @@ export class HiSecure {
     private hashingFallback: any;
     private rateLimiterPrimary: any;
     private rateLimiterFallback: any;
-    private validatorPrimary: any;
-    private validatorFallback: any;
     private sanitizerPrimary: any;
     private sanitizerFallback: any;
 
@@ -63,9 +60,7 @@ export class HiSecure {
         this.config = deepMerge(defaultConfig, userConfig);
     }
 
-    // =====================================================
     // SINGLETON & INITIALIZATION
-    // =====================================================
     
     static getInstance(config?: Partial<HiSecureConfig>): HiSecure {
         if (!HiSecure.instance) {
@@ -91,7 +86,6 @@ export class HiSecure {
         this.setupManagers();
         this.setupDynamicManagers();
 
-        // Make everything immutable
         deepFreeze(this.config);
         // deepFreeze(this.hashManager);
         // deepFreeze(this.rateLimitManager);
@@ -109,9 +103,7 @@ export class HiSecure {
         return this.initialized;
     }
 
-    // =====================================================
     // FLUENT API METHODS (Route-level security)
-    // =====================================================
     
     static auth(options?: { required?: boolean; roles?: string[] }) {
         const instance = this.getInstance();
@@ -156,9 +148,7 @@ export class HiSecure {
         return chain;
     }
 
-    // =====================================================
     // UTILITY METHODS (Direct usage)
-    // =====================================================
     
     static async hash(password: string): Promise<string> {
         const instance = this.getInstance();
@@ -198,9 +188,7 @@ export class HiSecure {
         }
     };
 
-    // =====================================================
     // GLOBAL MIDDLEWARE (app.use())
-    // =====================================================
     
     static middleware(options?: SecureOptions | "api" | "strict" | "public") {
         const instance = this.getInstance();
@@ -222,9 +210,8 @@ export class HiSecure {
         return instance.createMiddlewareChain(options || {});
     }
 
-    // =====================================================
-    // INTERNAL METHODS
-    // =====================================================
+   
+    // Internal Methods
     
     private setupAdapters(): void {
         logger.info("🧩 Setting up adapters...");
@@ -244,13 +231,16 @@ export class HiSecure {
             : new ExpressRLAdapter();
         this.rateLimiterFallback = new ExpressRLAdapter();
 
-        // Validation
-        this.validatorPrimary = this.config.validation.mode === "zod"
-            ? new ZodAdapter()
-            : new ExpressValidatorAdapter();
-        this.validatorFallback = this.config.validation.fallback === "express-validator"
-            ? new ExpressValidatorAdapter()
-            : null;
+
+
+        // // Validation
+        // this.validatorPrimary = this.config.validation.mode === "zod"
+        //     ? new ZodAdapter()
+        //     : new ExpressValidatorAdapter();
+        // this.validatorFallback = this.config.validation.fallback === "express-validator"
+        //     ? new ExpressValidatorAdapter()
+        //     : null;
+
 
         // Sanitization
         this.sanitizerPrimary = new SanitizeHtmlAdapter(this.config.sanitizer);
@@ -301,7 +291,6 @@ export class HiSecure {
                 jwtSecret,
                 jwtExpiresIn: this.config.auth.jwtExpiresIn,
                 googleClientId: process.env.GOOGLE_CLIENT_ID || this.config.auth.googleClientId
-                // Removed algorithm - handled in AuthManager
             });
         }
     }

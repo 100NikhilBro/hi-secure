@@ -1,4 +1,3 @@
-// src/adapters/ExpressRLAdapter.ts - IMPROVED
 import rateLimit from "express-rate-limit";
 import { logger } from "../logging/index.js";
 import { AdapterError } from "../core/errors/AdapterError.js";
@@ -17,7 +16,7 @@ export class ExpressRLAdapter {
     getMiddleware(options: RateLimitOptions = {}) {
         try {
             const defaultOptions = {
-                windowMs: 15 * 60 * 1000, // 15 minutes
+                windowMs: 15 * 60 * 1000, 
                 max: 100,
                 message: { error: "Too many requests" },
                 standardHeaders: true,

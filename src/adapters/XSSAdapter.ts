@@ -1,4 +1,3 @@
-// src/adapters/XSSAdapter.ts - NEW FILE
 import { FilterXSS, getDefaultWhiteList, whiteList } from 'xss';
 import { AdapterError } from "../core/errors/AdapterError.js";
 import { logger } from "../logging/index.js";
@@ -25,12 +24,12 @@ export class XSSAdapter {
         // Default safe configuration
         const defaultOptions: XSSOptions = {
             whiteList: getDefaultWhiteList(),
-            stripIgnoreTag: true, // Remove non-whitelisted tags completely
+            stripIgnoreTag: true, 
             stripIgnoreTagBody: ['script', 'style', 'iframe', 'object', 'embed'],
             allowCommentTag: false,
-            css: false, // Disable CSS by default
+            css: false, 
             onTag: (tag, html, options) => {
-                // Add noopener/noreferrer to links for security
+               
                 if (tag === 'a') {
                     return html.replace(/<a /i, '<a target="_blank" rel="noopener noreferrer" ');
                 }
@@ -42,21 +41,19 @@ export class XSSAdapter {
         this.defaultFilter = new FilterXSS(finalOptions);
     }
 
-    /**
-     * Sanitize a string with global + dynamic merged options
-     */
+   
     sanitize(input: string, dynamicOptions?: XSSOptions): string {
         try {
             if (typeof input !== "string") {
                 return input as any;
             }
 
-            // If no dynamic options, use default filter
+           
             if (!dynamicOptions || Object.keys(dynamicOptions).length === 0) {
                 return this.defaultFilter.process(input);
             }
 
-            // Merge options for this specific call
+            
             const mergedOptions = { ...this.globalOptions, ...dynamicOptions };
             const customFilter = new FilterXSS(mergedOptions);
             
@@ -71,10 +68,7 @@ export class XSSAdapter {
         }
     }
 
-    /**
-     * Middleware wrapper WITH dynamic options
-     * Doesn't mutate original request - creates sanitized copy
-     */
+   
     middleware(dynamicOptions?: XSSOptions) {
         return (req: any, _res: any, next: any) => {
             try {
@@ -94,14 +88,14 @@ export class XSSAdapter {
                                     : v
                             );
                         } else if (val && typeof val === "object") {
-                            // Handle nested objects (simple recursion)
+                            
                             sanitizedBody[key] = this.deepSanitize(val, dynamicOptions);
                         } else {
                             sanitizedBody[key] = val;
                         }
                     }
                     
-                    // Store sanitized version separately
+                   
                     req.sanitizedBody = sanitizedBody;
                     
                     logger.debug("🛡️ XSS sanitizer applied", {
@@ -120,11 +114,9 @@ export class XSSAdapter {
         };
     }
 
-    /**
-     * Deep sanitize nested objects/arrays
-     */
+   
     private deepSanitize(obj: any, options?: XSSOptions, visited = new WeakSet()): any {
-        // Handle circular references
+       
         if (obj && typeof obj === "object") {
             if (visited.has(obj)) {
                 return obj;
