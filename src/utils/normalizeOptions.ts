@@ -218,21 +218,22 @@ function normalizeRateLimit(value: SecureOptions["rateLimit"]): NormalizedOption
 }
 
 function normalizeAuth(value: SecureOptions["auth"]): NormalizedOptions["auth"] {
-    // if (value === false) {
-    //     return { enabled: false, required: false };
-    // }
     
-    // if (value === true || value === undefined) {
-    //     return { enabled: true, required: true };
-    // }
+    if (value === false) {
+        return { enabled: false, required: false };
+    }
+    
+    if (value === true || value === undefined) {
+        return { enabled: true, required: true };
+    }
 
 
-    if (value === undefined) {
-    return { enabled: false, required: false };
-}
-if (value === true) {
-    return { enabled: true, required: true };
-}
+//     if (value === undefined) {
+//     return { enabled: false, required: false };
+// }
+// if (value === true) {
+//     return { enabled: true, required: true };
+// }
 
     
     const authOptions = value as AuthOptions;
