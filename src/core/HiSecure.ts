@@ -93,13 +93,13 @@ export class HiSecure {
 
         // Make everything immutable
         deepFreeze(this.config);
-        deepFreeze(this.hashManager);
-        deepFreeze(this.rateLimitManager);
-        deepFreeze(this.validatorManager);
-        deepFreeze(this.sanitizerManager);
-        deepFreeze(this.jsonManager);
-        deepFreeze(this.corsManager);
-        if (this.authManager) deepFreeze(this.authManager);
+        // deepFreeze(this.hashManager);
+        // deepFreeze(this.rateLimitManager);
+        // deepFreeze(this.validatorManager);
+        // deepFreeze(this.sanitizerManager);
+        // deepFreeze(this.jsonManager);
+        // deepFreeze(this.corsManager);
+        // if (this.authManager) deepFreeze(this.authManager);
 
         this.initialized = true;
         logger.info("✅ HiSecure initialized successfully");
@@ -273,11 +273,11 @@ export class HiSecure {
         );
 
         this.validatorManager = new ValidatorManager(
-            this.config.validation,
-            this.validatorPrimary,
-            this.validatorFallback
-            // new ZodAdapter(),
-            // new ExpressValidatorAdapter()
+            // this.config.validation,
+            // this.validatorPrimary,
+            // this.validatorFallback
+            new ZodAdapter(),
+            new ExpressValidatorAdapter()
         );
 
         this.sanitizerManager = new SanitizerManager(
