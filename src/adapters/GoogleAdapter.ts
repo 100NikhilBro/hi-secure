@@ -128,7 +128,9 @@
 // src/adapters/GoogleAdapter.ts - FIXED
 import { OAuth2Client, LoginTicket } from "google-auth-library";
 import { AdapterError } from "../core/errors/AdapterError.js";
-import { logWarn, logError } from "../logging/index.js";
+// import { logWarn, logError } from "../logging/index.js";
+
+import {logger} from '../logging';
 
 export interface GoogleTokenPayload {
     sub: string;
@@ -171,7 +173,7 @@ export class GoogleAdapter {
             const payload = ticket.getPayload();
             
             if (!payload) {
-                logWarn("GoogleAdapter: Empty payload");
+                logger.warn("GoogleAdapter: Empty payload");
                 throw new AdapterError("Invalid Google ID token payload.");
             }
 
@@ -191,7 +193,7 @@ export class GoogleAdapter {
             return result;
 
         } catch (err: any) {
-            logError("GoogleAdapter.verifyIdToken failed", { 
+            logger.error("GoogleAdapter.verifyIdToken failed", { 
                 error: err?.message,
                 hasClientId: !!this.clientId 
             });

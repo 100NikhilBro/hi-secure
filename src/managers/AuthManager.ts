@@ -105,9 +105,11 @@
 import { JWTAdapter } from "../adapters/JWTAdapter.js";
 import { GoogleAdapter } from "../adapters/GoogleAdapter.js";
 import { AdapterError } from "../core/errors/AdapterError.js";
-import { HttpError } from "../core/errors/HttpErrror.js";
+import { HttpError } from "../core/errors/HttpError.js";
 import { Request, Response, NextFunction } from "express";
-import { logError, logWarn, logInfo } from "../logging";
+// import { logError, logWarn, logInfo } from "../logging";
+import { logger } from "../logging";
+
 
 export interface AuthOptions {
     jwtSecret: string;
@@ -130,10 +132,10 @@ export class AuthManager {
         }
 
         if (opts.jwtSecret.length < 32) {
-            logWarn("⚠ JWT secret is less than 32 characters - consider using a stronger secret");
+            logger.warn("⚠ JWT secret is less than 32 characters - consider using a stronger secret");
         }
 
-        logInfo("AuthManager initialized");
+        logger.info("AuthManager initialized");
 
         this.jwtAdapter = new JWTAdapter({
             secret: opts.jwtSecret,
@@ -142,17 +144,17 @@ export class AuthManager {
 
         if (opts.googleClientId) {
             this.googleAdapter = new GoogleAdapter(opts.googleClientId);
-            logInfo("GoogleAdapter enabled");
+            logger.info("GoogleAdapter enabled");
         }
     }
 
     sign(payload: object, options?: { expiresIn?: string | number, jti?: string }) {
-        logInfo("JWT Sign called");
+        logger.info("JWT Sign called");
         return this.jwtAdapter.sign(payload, options);
     }
 
     verify(token: string) {
-        logInfo("JWT Verify called");
+        logger.info("JWT Verify called");
         return this.jwtAdapter.verify(token);
     }
 
@@ -161,12 +163,12 @@ export class AuthManager {
             throw new AdapterError("GoogleAdapter not configured.");
         }
 
-        logInfo("Google ID Token verify called");
+        logger.info("Google ID Token verify called");
 
         try {
             return await this.googleAdapter.verifyIdToken(idToken);
         } catch (err: any) {
-            logError("Google ID Token verification failed", { error: err?.message });
+            logger.error("Google ID Token verification failed", { error: err?.message });
             throw HttpError.Unauthorized("Invalid Google ID token");
         }
     }
@@ -185,7 +187,7 @@ export class AuthManager {
 
             // If auth is required but no header
             if (!header) {
-                logWarn("Missing Authorization header", {
+                logger.warn("Missing Authorization header", {
                     path: req.path,
                     method: req.method
                 });
@@ -195,7 +197,7 @@ export class AuthManager {
             // Parse Bearer token
             const [type, token] = String(header).split(" ");
             if (type !== "Bearer" || !token) {
-                logWarn("Invalid Authorization header", {
+                logger.warn("Invalid Authorization header", {
                     path: req.path,
                     method: req.method
                 });
@@ -214,7 +216,7 @@ export class AuthManager {
                 if (roles && roles.length > 0) {
                     const userRole = (decoded as any).role || (decoded as any).roles?.[0];
                     if (!userRole || !roles.includes(userRole)) {
-                        logWarn("Insufficient permissions", {
+                        logger.warn("Insufficient permissions", {
                             path: req.path,
                             requiredRoles: roles,
                             userRole
@@ -225,7 +227,7 @@ export class AuthManager {
                 
                 return next();
             } catch (err: any) {
-                logError("JWT verify failed", {
+                logger.error("JWT verify failed", {
                     error: err?.message,
                     path: req.path,
                     method: req.method

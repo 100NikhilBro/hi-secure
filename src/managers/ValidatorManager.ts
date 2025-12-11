@@ -1,132 +1,7 @@
-// // // import { HiSecureConfig } from "../core/config";
-// // // import { logger } from "../logging";
-// // // import { ValidationError } from "../core/errors/ValidationError";
-
-// // // export class ValidatorManager {
-// // //     private config: HiSecureConfig["validation"];
-// // //     private primaryAdapter: any;
-// // //     private fallbackAdapter: any;
-
-// // //     constructor(
-// // //         config: HiSecureConfig["validation"],
-// // //         primaryAdapter: any,
-// // //         fallbackAdapter: any
-// // //     ) {
-// // //         this.config = config;
-// // //         this.primaryAdapter = primaryAdapter;
-// // //         this.fallbackAdapter = fallbackAdapter;
-// // //     }
-
-// // //     /**
-// // //      * Validate request body using primary adapter (Zod/express-validator).
-// // //      * Fallback is only used if the adapter implementation itself throws.
-// // //      */
-// // //     validate(schema: any) {
-// // //         return (req: any, res: any, next: any) => {
-// // //             try {
-// // //                 const middleware = this.primaryAdapter.validate(schema);
-// // //                 return middleware(req, res, next);
-
-// // //             } catch (err: any) {
-// // //                 logger.warn("⚠ Primary validator failed", {
-// // //                     error: err?.message,
-// // //                     path: req.path,
-// // //                     method: req.method
-// // //                 });
-
-// // //                 if (!this.fallbackAdapter) {
-// // //                     return next(new ValidationError("Validation failed."));
-// // //                 }
-
-// // //                 try {
-// // //                     logger.info("📌 Using fallback validator");
-// // //                     const fallbackMiddleware = this.fallbackAdapter.validate(schema);
-// // //                     return fallbackMiddleware(req, res, next);
-
-// // //                 } catch (fallbackErr: any) {
-// // //                     logger.error("❌ Fallback validation also failed", {
-// // //                         error: fallbackErr?.message
-// // //                     });
-
-// // //                     return next(new ValidationError("Both validators failed."));
-// // //                 }
-// // //             }
-// // //         };
-// // //     }
-// // // }
-
-
-
-// // import { HiSecureConfig } from "../core/config.js";
-// // import { logger } from "../logging";
-// // import { ValidationError } from "../core/errors/ValidationError.js";
-
-// // interface ValidatorAdapter {
-// //     validate: (schema?: any) => any;
-// // }
-
-// // export class ValidatorManager {
-// //     private config: HiSecureConfig["validation"];
-// //     private primaryAdapter: ValidatorAdapter;
-// //     private fallbackAdapter: ValidatorAdapter | null;
-
-// //     constructor(
-// //         config: HiSecureConfig["validation"],
-// //         primaryAdapter: ValidatorAdapter,
-// //         fallbackAdapter: ValidatorAdapter | null
-// //     ) {
-// //         this.config = config;
-// //         this.primaryAdapter = primaryAdapter;
-// //         this.fallbackAdapter = fallbackAdapter;
-// //     }
-
-// //     /**
-// //      * MAIN DYNAMIC VALIDATOR ENTRY
-// //      * schema = per-route schema
-// //      * If schema is undefined → use global schema
-// //      */
-// //     validate(schema?: any) {
-// //         return (req: any, res: any, next: any) => {
-// //             try {
-// //                 const middleware = this.primaryAdapter.validate(schema);
-// //                 return middleware(req, res, next);
-
-// //             } catch (err: any) {
-// //                 logger.warn("⚠ Primary validator failed", {
-// //                     error: err?.message,
-// //                     path: req.path,
-// //                     method: req.method
-// //                 });
-
-// //                 if (!this.fallbackAdapter) {
-// //                     return next(new ValidationError("Validation failed"));
-// //                 }
-
-// //                 try {
-// //                     logger.info("📌 Using fallback validator");
-// //                     const fallbackMiddleware = this.fallbackAdapter.validate(schema);
-// //                     return fallbackMiddleware(req, res, next);
-
-// //                 } catch (fallbackErr: any) {
-// //                     logger.error("❌ Fallback validator also failed", {
-// //                         error: fallbackErr?.message
-// //                     });
-
-// //                     return next(new ValidationError("Both validators failed"));
-// //                 }
-// //             }
-// //         };
-// //     }
-// // }
-
-
-
-
-
-// // src/managers/ValidatorManager.ts - FIXED
+// // src/managers/ValidatorManager.ts - COMPLETE FIXED
 // import { logger } from "../logging";
 // import { ValidationError } from "../core/errors/ValidationError.js";
-// import { HiSecureConfig } from "../core/types/HiSecureConfig";
+// import { HiSecureConfig } from "../core/types/HiSecureConfig.js"; // ✅ FIXED IMPORT
 
 // interface ValidatorAdapter {
 //     validate: (schema?: any) => any;
@@ -196,74 +71,137 @@
 // }
 
 
-// src/managers/ValidatorManager.ts - COMPLETE FIXED
+
+
+// // src/managers/ValidatorManager.ts
+// import { logger } from "../logging";
+// import { ValidationError } from "../core/errors/ValidationError.js";
+
+// interface ValidatorAdapter {
+//     validate: (schema?: any) => any;
+// }
+
+// export class ValidatorManager {
+//     private primaryAdapter: ValidatorAdapter;
+//     private fallbackAdapter: ValidatorAdapter | null;
+
+//     constructor(primaryAdapter: ValidatorAdapter, fallbackAdapter: ValidatorAdapter | null) {
+//         this.primaryAdapter = primaryAdapter;
+//         this.fallbackAdapter = fallbackAdapter;
+//     }
+
+//     validate(schema?: any) {
+//         return (req: any, res: any, next: any) => {
+//             const isZod = schema && typeof schema === "object" && typeof schema.safeParse === "function";
+//             const isExpressValidator = Array.isArray(schema);
+
+//             let adapter: ValidatorAdapter;
+
+//             if (isZod) {
+//                 adapter = this.primaryAdapter; // ZodAdapter
+//                 logger.debug("📌 Using Zod adapter for validation");
+//             } 
+//             else if (isExpressValidator) {
+//                 adapter = this.fallbackAdapter!; // ExpressValidatorAdapter
+//                 logger.debug("📌 Using express-validator adapter for validation");
+//             } 
+//             else {
+//                 return next(); // nothing to validate
+//             }
+
+//             const middleware = adapter.validate(schema);
+
+//             // Execute validation chain
+//             middleware(req, res, (err?: any) => {
+//                 if (err instanceof ValidationError) {
+//                     return next(err);
+//                 }
+//                 if (err) {
+//                     logger.error("❌ Validator internal error", { error: err.message });
+//                     return next(new ValidationError("Validation failed internally."));
+//                 }
+//                 next();
+//             });
+//         };
+//     }
+// }
+
+
+
+
+
+// src/managers/ValidatorManager.ts
 import { logger } from "../logging";
 import { ValidationError } from "../core/errors/ValidationError.js";
-import { HiSecureConfig } from "../core/types/HiSecureConfig.js"; // ✅ FIXED IMPORT
 
 interface ValidatorAdapter {
     validate: (schema?: any) => any;
 }
 
 export class ValidatorManager {
-    private config: HiSecureConfig["validation"];
-    private primaryAdapter: ValidatorAdapter;
-    private fallbackAdapter: ValidatorAdapter | null;
+    private zodAdapter: ValidatorAdapter;
+    private expressAdapter: ValidatorAdapter;
 
-    constructor(
-        config: HiSecureConfig["validation"],
-        primaryAdapter: ValidatorAdapter,
-        fallbackAdapter: ValidatorAdapter | null
-    ) {
-        this.config = config;
-        this.primaryAdapter = primaryAdapter;
-        this.fallbackAdapter = fallbackAdapter;
+    constructor(zodAdapter: ValidatorAdapter, expressAdapter: ValidatorAdapter) {
+        this.zodAdapter = zodAdapter;
+        this.expressAdapter = expressAdapter;
     }
 
     validate(schema?: any) {
+        // const isZod = schema && typeof schema.safeParse === "function";
+        const isZod =
+    schema &&
+    typeof schema === "object" &&
+    typeof schema._def === "object" && 
+    typeof schema.safeParse === "function";
+
+        const isExpressValidator = Array.isArray(schema);
+
         return (req: any, res: any, next: any) => {
-            // Execute primary adapter middleware
-            const primaryMiddleware = this.primaryAdapter.validate(schema);
-            
-            // Run middleware and handle errors properly
-            primaryMiddleware(req, res, (err?: any) => {
-                if (!err) {
-                    return next(); // Validation passed
-                }
-                
-                // If error is a ValidationError, pass it through (don't fallback!)
-                if (err instanceof ValidationError) {
-                    logger.warn("⚠ Validation failed", {
-                        path: req.path,
-                        method: req.method,
-                        error: err.message
-                    });
-                    return next(err);
-                }
-                
-                // Only use fallback for ADAPTER errors, not validation errors
-                logger.warn("⚠ Primary validator adapter failed", {
-                    error: err?.message,
-                    path: req.path,
-                    method: req.method
-                });
+            let middleware;
 
-                if (!this.fallbackAdapter) {
-                    return next(new ValidationError("Validation system error"));
-                }
+            if (isZod) {
+                logger.debug("📌 Using Zod adapter");
+                middleware = this.zodAdapter.validate(schema);
+            } 
+            else if (isExpressValidator) {
+                logger.debug("📌 Using express-validator adapter");
+                middleware = this.expressAdapter.validate(schema);
+            } 
+            else {
+                return next(); // no schema found
+            }
 
-                // Try fallback adapter
-                const fallbackMiddleware = this.fallbackAdapter.validate(schema);
-                fallbackMiddleware(req, res, (fallbackErr?: any) => {
-                    if (fallbackErr) {
-                        logger.error("❌ Fallback validator also failed", {
-                            error: fallbackErr?.message
-                        });
-                        return next(new ValidationError("Validation system unavailable"));
+            // CASE 1 — express-validator returns ARRAY
+            if (Array.isArray(middleware)) {
+                let idx = 0;
+
+                const run = (err?: any) => {
+                    if (err) return next(err);
+
+                    const fn = middleware[idx++];
+                    if (!fn) return next(); // done
+
+                    try {
+                        fn(req, res, run);
+                    } catch (error: any) {
+                        next(new ValidationError(error.message));
                     }
-                    next(); // Fallback validation passed
+                };
+
+                return run();
+            }
+
+            // CASE 2 — Zod returns SINGLE MIDDLEWARE
+            try {
+                middleware(req, res, (err?: any) => {
+                    if (err) return next(err);
+                    next();
                 });
-            });
+            } catch (err: any) {
+                next(new ValidationError(err.message));
+            }
         };
     }
 }
+

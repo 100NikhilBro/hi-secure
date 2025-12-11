@@ -256,6 +256,7 @@ import jwt from "jsonwebtoken";
 import { randomUUID } from "crypto";  // Built-in Node.js
 import { AdapterError } from "../core/errors/AdapterError.js";
 import { logError } from "../logging/index.js";
+import { logger } from "../logging";
 
 export interface JWTAdapterOptions {
     secret: string;
@@ -286,7 +287,8 @@ export class JWTAdapter {
         }
 
         if (options.secret.length < 32) {
-            logError("⚠ JWT secret is too short (minimum 32 characters recommended)");
+            logger.warn("🚨 JWT secret shorter than 32 chars. Consider using stronger secret.");
+            // logError("⚠ JWT secret is too short (minimum 32 characters recommended)");
         }
 
         this.secret = options.secret;

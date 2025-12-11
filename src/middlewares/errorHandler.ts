@@ -168,7 +168,7 @@ import { AdapterError } from "../core/errors/AdapterError.js";
 import { ValidationError } from "../core/errors/ValidationError.js";
 import { SanitizerError } from "../core/errors/SanitizerError.js";
 import { SecurityError } from "../core/errors/SecurityError.js";
-import { HttpError } from "../core/errors/HttpErrror.js";
+import { HttpError } from "../core/errors/HttpError.js";
 
 export function errorHandler(
     err: any,

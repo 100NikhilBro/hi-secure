@@ -160,10 +160,16 @@ export function normalizeOptions(input?: SecureOptions | false): NormalizedOptio
             options: typeof opts.sanitize === "object" ? opts.sanitize : undefined
         },
 
+        // validate: {
+        //     enabled: !!opts.validate,
+        //     schema: opts.validate || undefined
+        // },
+
         validate: {
-            enabled: !!opts.validate,
-            schema: opts.validate || undefined
-        },
+    enabled: opts.validate !== undefined,
+    schema: opts.validate
+},
+
 
         json: {
             enabled: opts.json === undefined ? true : opts.json !== false,
@@ -212,13 +218,22 @@ function normalizeRateLimit(value: SecureOptions["rateLimit"]): NormalizedOption
 }
 
 function normalizeAuth(value: SecureOptions["auth"]): NormalizedOptions["auth"] {
-    if (value === false) {
-        return { enabled: false, required: false };
-    }
+    // if (value === false) {
+    //     return { enabled: false, required: false };
+    // }
     
-    if (value === true || value === undefined) {
-        return { enabled: true, required: true };
-    }
+    // if (value === true || value === undefined) {
+    //     return { enabled: true, required: true };
+    // }
+
+
+    if (value === undefined) {
+    return { enabled: false, required: false };
+}
+if (value === true) {
+    return { enabled: true, required: true };
+}
+
     
     const authOptions = value as AuthOptions;
     const enabled = authOptions.required !== false;
