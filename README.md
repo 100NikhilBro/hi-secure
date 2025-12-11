@@ -1,230 +1,176 @@
 <h1 align="center">🔒 HiSecure</h1>
-<p align="center"><strong>One-line security for Express.js applications</strong></p>
+<p align="center"><strong>One-line security for Express.js</strong></p>
 
 <p align="center">
-HiSecure is an all-in-one security framework for Express.js.<br/>
-It bundles hashing, authentication, validation, sanitization, rate-limiting, logging, and security headers —  
-all through a <strong>single middleware line</strong>.
+HiSecure replaces <strong>10+ common Express security libraries</strong> with one unified API.<br/>
+It provides hashing, authentication, validation, sanitization, rate-limiting, CORS,<br/>
+security headers, compression, JSON parsing, query parsing and logging — all in a single layer.
 </p>
 
-<br/>
+<hr/>
 
-<!-- 🌟 FEATURE SECTION -->
-<div style="border-left:5px solid #6366F1; padding:20px; border-radius:8px; background:#fafafa;">
+<h2>🚀 Overview</h2>
 
-<h2>✨ Features</h2>
+<p>A traditional Express app requires installing & configuring:</p>
 
-<h3 style="color:#10B981;">🔐 Password Security</h3>
 <ul>
-  <li><strong>Argon2</strong> – Industry-leading hashing</li>
-  <li><strong>Bcrypt fallback</strong> – Auto-fallback system</li>
-  <li>Simple hash + verify utilities</li>
+  <li><code>argon2</code> / <code>bcrypt</code> — password hashing</li>
+  <li><code>express-validator</code> / <code>zod</code> — validation</li>
+  <li><code>sanitize-html</code> / <code>xss</code> — sanitization</li>
+  <li><code>helmet</code> — security headers</li>
+  <li><code>hpp</code> — HTTP parameter pollution protection</li>
+  <li><code>cors</code> — Cross-Origin configuration</li>
+  <li><code>express-rate-limit</code> — primary rate limiting</li>
+  <li><code>rate-limiter-flexible</code> — fallback rate limiting</li>
+  <li><code>compression</code> — gzip enablement</li>
+  <li><code>body-parser</code> — JSON & urlencoded (now replaced by Express)</li>
+  <li><code>qs</code> — secure query parsing</li>
 </ul>
 
-<h3 style="color:#3B82F6;">🔑 Authentication</h3>
-<ul>
-  <li><strong>JWT Authentication</strong> (issuer, audience, expiry)</li>
-  <li><strong>Google OAuth</strong> integration</li>
-  <li><strong>Route protection middleware</strong></li>
-</ul>
+<p><strong>HiSecure replaces all of them with one API.</strong></p>
 
-<h3 style="color:#F59E0B;">⏱️ Rate Limiting</h3>
+<hr/>
+
+<h2>✨ Feature Matrix</h2>
+
+<table>
+  <tr>
+    <th>Capability</th>
+    <th>Status</th>
+    <th>Notes</th>
+  </tr>
+
+  <tr>
+    <td>🔐 Authentication (JWT + Google OAuth)<br/><small>HiSecure.jwt.sign() / verify()</small></td>
+    <td>✅ Stable</td>
+    <td>Built-in issuer, audience, expiry, subject. Google ID-token adapter included.</td>
+  </tr>
+
+  <tr>
+    <td>🔑 Password Hashing (Argon2 + bcrypt fallback)<br/><small>HiSecure.hash() / verify()</small></td>
+    <td>✅ Stable</td>
+    <td>Argon2-first architecture with bcrypt fallback. Zero-config, secure API.</td>
+  </tr>
+
+  <tr>
+    <td>🛡 Route Protection<br/><small>HiSecure.auth()</small></td>
+    <td>✅ Stable</td>
+    <td>Lightweight auth guard + optional roles (RBAC ready).</td>
+  </tr>
+
+  <tr>
+    <td>📏 Validation (Zod + express-validator)<br/><small>HiSecure.validate()</small></td>
+    <td>✅ Stable</td>
+    <td>Primary Zod adapter; express-validator fallback. Uniform error shape.</td>
+  </tr>
+
+  <tr>
+    <td>🧼 Sanitization (HTML + XSS)<br/><small>sanitize-html + xss</small></td>
+    <td>✅ Stable</td>
+    <td>Sanitizes body, query, params. Protects against HTML injection & XSS.</td>
+  </tr>
+
+  <tr>
+    <td>⏱ Rate Limiting<br/><small>strict / relaxed / api / custom</small></td>
+    <td>✅ Stable</td>
+    <td>
+      Primary: express-rate-limit<br/>
+      Fallback: <strong>rate-limiter-flexible</strong><br/>
+      Presets + per-route overrides supported.
+    </td>
+  </tr>
+
+  <tr>
+    <td>🌐 CORS</td>
+    <td>✅ Stable</td>
+    <td>Dynamic allowlist + full custom configuration.</td>
+  </tr>
+
+  <tr>
+    <td>🧱 Security Headers<br/><small>helmet + hpp</small></td>
+    <td>✅ Stable</td>
+    <td>Automatically applies essential security headers + HPP protection.</td>
+  </tr>
+
+  <tr>
+    <td>📦 JSON & URL Parsing</td>
+    <td>✅ Stable</td>
+    <td>Express JSON + urlencoded toggle via one option.</td>
+  </tr>
+
+  <tr>
+    <td>🔍 Query Parsing (qs)</td>
+    <td>✅ Stable</td>
+    <td>Secure deep query parsing built-in.</td>
+  </tr>
+
+  <tr>
+    <td>🌀 Compression<br/><small>gzip</small></td>
+    <td>✅ Stable</td>
+    <td>One-flag toggle: <code>compression: true</code>.</td>
+  </tr>
+
+  <tr>
+    <td>📊 Structured Logging</td>
+    <td>⚠️ Beta</td>
+    <td>Unified logs across all adapters and internal systems.</td>
+  </tr>
+
+  <tr>
+    <td>🔧 Adapter System</td>
+    <td>✅ Stable</td>
+    <td>Replace hashing, validation, sanitizer logic without rewriting routes.</td>
+  </tr>
+</table>
+
+<hr/>
+
+<h2>⚡ Developer Experience Highlights</h2>
+
 <ul>
-  <li><strong>express-rate-limit</strong> – (Primary)</li>
-  <li><strong>rate-limiter-flexible</strong> – (Fallback)</li>
-  <li>Modes:
-    <ul>
-      <li>🛑 <strong>Strict</strong>: 5 req / 10 sec</li>
-      <li>🟡 <strong>Relaxed</strong>: 100 req / 15 min</li>
-      <li>⚙️ <strong>API</strong>: Custom config</li>
-    </ul>
+  <li>✨ One-line global security with <strong>HiSecure.middleware()</strong></li>
+
+  <li>🔐 Password utilities:
+    <br/>• <strong>HiSecure.hash()</strong> for Argon2-based hashing  
+    <br/>• <strong>HiSecure.verify()</strong> for unified password checks  
+    <small>No salts, no configs, no manual imports.</small>
   </li>
+
+  <li>🔑 Token utilities:
+    <br/>• <strong>HiSecure.jwt.sign()</strong>  
+    <br/>• <strong>HiSecure.jwt.verify()</strong>  
+    <small>Issuer, audience, expiry, subject handling built-in.</small>
+  </li>
+
+  <li>📏 Developer-friendly validation with <strong>HiSecure.validate()</strong></li>
+  <li>🛡 Route protection simplified with <strong>HiSecure.auth()</strong></li>
+  <li>⏱ Per-route & global rate limiting via <strong>HiSecure.rateLimit()</strong></li>
+
+  <li>🧼 Auto-sanitization (HTML + XSS) without writing custom middleware</li>
+  <li>🔧 Configure everything from one object</li>
+  <li>🛠 Removes the need for configuring 10+ libraries manually</li>
+  <li>🛡 Guarantees consistent security across all environments</li>
+  <li>📦 Works with both new & existing Express apps</li>
+  <li>⚙️ Perfect for production REST APIs & microservices</li>
 </ul>
 
-<h3 style="color:#EC4899;">🧼 Input Sanitization</h3>
+<hr/>
+
+<h2>📌 Summary</h2>
+
+<p>HiSecure provides a complete security layer:</p>
+
 <ul>
-  <li><strong>sanitize-html</strong> – HTML sanitization</li>
-  <li><strong>xss</strong> – Fallback for XSS</li>
-  <li>Auto-cleans request body, query & params</li>
+  <li><strong>JWT Authentication</strong> (issuer, audience, Google OAuth)</li>
+  <li><strong>Password Hashing</strong> (Argon2 + bcrypt fallback)</li>
+  <li><strong>Validation</strong> (Zod + express-validator)</li>
+  <li><strong>Sanitization</strong> (HTML & XSS protection)</li>
+  <li><strong>Rate Limiting</strong> (express-rate-limit + rate-limiter-flexible)</li>
+  <li><strong>CORS + Security Headers + Compression</strong></li>
+  <li><strong>JSON & Query Parsing</strong> (body + qs)</li>
 </ul>
 
-<h3 style="color:#8B5CF6;">🛡️ Additional Security Layers</h3>
-<ul>
-  <li>CORS • Helmet • HPP</li>
-  <li>Secure JSON parsing</li>
-  <li>Query parser hardening</li>
-  <li>Gzip compression</li>
-  <li>Structured logging</li>
-</ul>
-
-</div>
-
-<br/>
-
-<!-- 🚀 QUICK START SECTION -->
-<div style="border-left:5px solid #10B981; padding:20px; border-radius:8px; background:#fafafa;">
-
-<h2>🚀 Quick Start</h2>
-
-<h3>📦 Installation</h3>
-
-```bash
-npm install hi-secure
-```
-
-<h3>🔥 Basic Setup</h3>
-
-```bash
-import express from "express";
-import { HiSecure } from "hi-secure";
-
-const app = express();
-
-app.use(
-  HiSecure.middleware('api')  
-  // { cors: true, rateLimit: "relaxed", sanitize: true }
-);
-
-app.listen(3000, () => console.log("Server running"));
-```
-
-
-</div> <br/> <!-- 🔑 JWT SECTION --> <div style="border-left:5px solid #3B82F6; padding:20px; border-radius:8px; background:#fafafa;"> 
-<h2>🔑 JWT Authentication Setup</h2> <h3 style="color:#3B82F6;">🟦 Initialize JWT</h3>
-
-```bash
-
-require("dotenv").config();
-import { HiSecure } from "hi-secure";
-
-HiSecure.getInstance({
-  auth: {
-    enabled: true,
-    jwtSecret: process.env.JWT_SECRET || "dev_secret_12345",
-    jwtExpiresIn: "7d",
-    jwtIssuer: "hi-secure-backend",
-    jwtAudience: "hi-secure-users",
-  },
-});
-
-
-import express from "express";
-import userRoutes from "./routes/UserRoutes.js";
-
-const app = express();
-const PORT = 3000;
-
-app.use(HiSecure.middleware("api"));
-
-app.use(
-  HiSecure.middleware({
-    compression: true,
-    json: true,
-    sanitize: true,
-    validate: true,
-    headers: true,
-  })
-);
-
-app.use("/api/auth", userRoutes);
-
-app.listen(PORT, () => console.log(`Running on http://localhost:${PORT}`));
-
-```
-
-
-</div> <br/> <!-- 🧩 FULL AUTH SECTION --> <div style="border-left:5px solid #F43F5E; padding:20px; border-radius:8px; background:#fafafa;">
-  
-  <h2>🧩 Full Authentication Example</h2>
-  
-  <h3 style="color:#F43F5E;">🔐 Register User</h3>
-
-  ```bash
-
-  import { HiSecure } from "hi-secure";
-import User from "../models/User.js";
-
-export const registerUser = async (req, res) => {
-  const { name, email, password } = req.body;
-
-  const exists = await User.findOne({ email });
-  if (exists) return res.status(400).json({ error: "User exists" });
-
-  const hashed = await HiSecure.hash(password);
-
-  const user = await User.create({ name, email, password: hashed });
-
-  const token = HiSecure.jwt.sign({ userId: user._id }, { expiresIn: "7d" });
-
-  res.json({ message: "Registered", token });
-};
-
-```
-
-<h3 style="color:#F43F5E;">🔐 Login User</h3>
-
-```bash
-export const loginUser = async (req, res) => {
-  const { email, password } = req.body;
-
-  const user = await User.findOne({ email });
-  if (!user) return res.status(401).json({ error: "Invalid credentials" });
-
-  const valid = await HiSecure.verify(password, user.password);
-  if (!valid) return res.status(401).json({ error: "Invalid credentials" });
-
-  const token = HiSecure.jwt.sign({ userId: user._id }, { expiresIn: "7d" });
-
-  res.json({ message: "Login successful", token });
-};
-```
-
-<h3 style="color:#F43F5E;">👤 Protected Profile Route</h3>
-
-```bash
-export const getProfile = async (req, res) => {
-  const user = await User.findById(req.user.userId).select("-password");
-  if (!user) return res.status(404).json({ error: "Not found" });
-
-  res.json({ user });
-};
-```
-
-</div> <br/> <!-- ROUTES --> <div style="border-left:5px solid #F59E0B; padding:20px; border-radius:8px; background:#fafafa;"> 
-<h2>📌 Routes Example</h2>
-
-```bash
-
-import express from "express";
-import { HiSecure } from "hi-secure";
-import {
-  registerUser,
-  loginUser,
-  getProfile,
-} from "../controllers/UserControllers.js";
-
-const router = express.Router();
-
-router.post("/register", registerUser);
-
-router.post(
-  "/login",
-  HiSecure.rateLimit({ max: 5, windowMs: 15 * 60 * 1000 }),
-  loginUser
-);
-
-router.get("/profile", HiSecure.auth({ required: true }), getProfile);
-
-export default router;
-
-```
-
-</div> <br/> <h2 align="center">🛠️ More features & docs coming soon…</h2>
-<h3 align="center">Made with 🔒 for secure Node.js apps</h3> 
-
-
-
-
-
-
-
+<p align="center"><strong>
+Security without complexity.<br/>
+A single dependency — complete Express security.
+</strong></p>
