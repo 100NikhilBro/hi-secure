@@ -36,16 +36,14 @@ export class JsonManager {
     queryParser(options?: any) {
         return (req: any, res: any, next: any) => {
             try {
-                // Only parse if not already parsed by Express
                 if (!req.parsedQuery && req.url.includes('?')) {
                     const queryString = req.url.split("?")[1] || "";
                     const parsed = qs.parse(queryString, {
-                        depth: 5, // Prevent deep nesting attacks
+                        depth: 5,
                         parameterLimit: 100,
                         ...options
                     });
                     
-                    // Store separately, don't override req.query
                     req.parsedQuery = parsed;
                     logger.debug("🔍 Query parsed", {
                         keys: Object.keys(parsed)
