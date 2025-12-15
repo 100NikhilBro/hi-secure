@@ -27,7 +27,7 @@ export class AuthManager {
         }
 
         if (opts.jwtSecret.length < 32) {
-            logger.warn("⚠ JWT secret is less than 32 characters - consider using a stronger secret");
+            logger.warn(" JWT secret is less than 32 characters - consider using a stronger secret");
         }
 
         logger.info("AuthManager initialized");
@@ -108,7 +108,7 @@ export class AuthManager {
                 (req as any).auth = decoded;
                 (req as any).user = decoded; 
                 
-                // Role-based authorization
+                // Role-based authorization - role added Middleware
                 if (roles && roles.length > 0) {
                     const userRole = (decoded as any).role || (decoded as any).roles?.[0];
                     if (!userRole || !roles.includes(userRole)) {

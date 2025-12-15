@@ -29,7 +29,7 @@ export class ExpressValidatorAdapter {
                         // location: err.location
                     }));
 
-                    logger.warn("⚠ express-validator failed", {
+                    logger.warn("express-validator failed", {
                         path: req.path,
                         method: req.method,
                         errors: formatted,

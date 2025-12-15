@@ -28,7 +28,7 @@ export class ExpressRLAdapter {
             
             const limiter = rateLimit(finalOptions);
             
-            logger.debug("📌 Express rate limiter configured", {
+            logger.debug("Express rate limiter configured", {
                 windowMs: finalOptions.windowMs,
                 max: finalOptions.max
             });
@@ -36,7 +36,7 @@ export class ExpressRLAdapter {
             return limiter;
 
         } catch (err: any) {
-            logger.error("❌ ExpressRLAdapter: failed to create limiter", {
+            logger.error("ExpressRLAdapter: failed to create limiter", {
                 error: err?.message || err
             });
             throw new AdapterError("Express rate limiter creation failed.");

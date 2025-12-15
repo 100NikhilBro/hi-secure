@@ -16,7 +16,7 @@ export class CorsManager {
             
             const finalOptions = options ? { ...defaultOptions, ...options } : defaultOptions;
             
-            logger.debug("🔧 CORS configured", {
+            logger.debug("CORS configured", {
                 origin: finalOptions.origin,
                 methods: finalOptions.methods
             });
@@ -24,7 +24,7 @@ export class CorsManager {
             return cors(finalOptions);
             
         } catch (err: any) {
-            logger.error("❌ CORS Manager: failed to create CORS middleware", {
+            logger.error(" CORS Manager: failed to create CORS middleware", {
                 error: err?.message || err,
                 options
             });

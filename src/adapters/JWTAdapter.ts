@@ -33,8 +33,8 @@ export class JWTAdapter {
         }
 
         if (options.secret.length < 32) {
-            logger.warn("🚨 JWT secret shorter than 32 chars. Consider using stronger secret.");
-            // logError("⚠ JWT secret is too short (minimum 32 characters recommended)");
+            logger.warn("JWT secret shorter than 32 chars. Consider using stronger secret.");
+            // logError("JWT secret is too short (minimum 32 characters recommended)");
         }
 
         this.secret = options.secret;

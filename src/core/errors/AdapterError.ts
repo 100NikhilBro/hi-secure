@@ -8,7 +8,7 @@ export class AdapterError extends Error {
         this.code = code;
         this.name = "AdapterError";
 
-        // Capture stack trace properly
+        // stack trace properly
         Error.captureStackTrace?.(this, AdapterError);
     }
 }

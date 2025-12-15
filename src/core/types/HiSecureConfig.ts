@@ -1,4 +1,3 @@
-// src/core/types/HiSecureConfig.ts
 export interface HiSecureConfig {
     // Core security features
     enableHelmet: boolean;

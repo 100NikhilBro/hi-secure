@@ -76,17 +76,18 @@ export class HiSecure {
 
     init(): void {
         if (this.initialized) {
-            logger.warn("⚠ HiSecure already initialized");
+            logger.warn(" HiSecure already initialized");
             return;
         }
 
-        logger.info(`🔐 ${LIB_NAME} v${LIB_VERSION} initializing...`);
+        logger.info(` ${LIB_NAME} v${LIB_VERSION} initializing...`);
 
         this.setupAdapters();
         this.setupManagers();
         this.setupDynamicManagers();
 
         deepFreeze(this.config);
+        // deep Freeze - for now we remove from manager it needs to manage the adapters
         // deepFreeze(this.hashManager);
         // deepFreeze(this.rateLimitManager);
         // deepFreeze(this.validatorManager);
@@ -96,7 +97,7 @@ export class HiSecure {
         // if (this.authManager) deepFreeze(this.authManager);
 
         this.initialized = true;
-        logger.info("✅ HiSecure initialized successfully");
+        logger.info("HiSecure initialized successfully");
     }
 
     isInitialized(): boolean {
@@ -148,7 +149,7 @@ export class HiSecure {
         return chain;
     }
 
-    // UTILITY METHODS (Direct usage)
+    // UTILITY METHODS - For direct use
     
     static async hash(password: string): Promise<string> {
         const instance = this.getInstance();
@@ -214,7 +215,7 @@ export class HiSecure {
     // Internal Methods
     
     private setupAdapters(): void {
-        logger.info("🧩 Setting up adapters...");
+        logger.info(" Setting up adapters...");
 
         // Hashing
         this.hashingPrimary = this.config.hashing.primary === "argon2"
@@ -233,7 +234,8 @@ export class HiSecure {
 
 
 
-        // // Validation
+
+        // // Validation - we handle this in d/f way for now 
         // this.validatorPrimary = this.config.validation.mode === "zod"
         //     ? new ZodAdapter()
         //     : new ExpressValidatorAdapter();
@@ -246,7 +248,7 @@ export class HiSecure {
         this.sanitizerPrimary = new SanitizeHtmlAdapter(this.config.sanitizer);
         this.sanitizerFallback = new XSSAdapter(this.config.sanitizer);
 
-        logger.info("✅ Adapters ready");
+        logger.info("Adapters ready");
     }
 
     private setupManagers(): void {
@@ -341,7 +343,7 @@ export class HiSecure {
             chain.push(this.authManager.protect(authOpts));
         }
         
-        // Error handler (always last)
+        // Error handler - at last usage
         chain.push(errorHandler);
         
         return chain;

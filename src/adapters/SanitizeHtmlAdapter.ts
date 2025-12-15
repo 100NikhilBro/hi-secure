@@ -17,7 +17,7 @@ export class SanitizeHtmlAdapter {
             return typeof clean === "string" ? clean : String(clean);
 
         } catch (err: any) {
-            logger.error("❌ sanitize-html failed", {
+            logger.error("sanitize-html failed", {
                 error: err?.message || err,
                 preview: typeof input === "string" ? input.slice(0, 100) : undefined
             });
@@ -61,14 +61,14 @@ export class SanitizeHtmlAdapter {
                 if (req.body) {
                     req.body = this.deepSanitize(req.body, dynamicOptions);
 
-                    logger.debug("🧼 sanitize-html applied", {
+                    logger.debug("sanitize-html applied", {
                         keys: Object.keys(req.body)
                     });
                 }
                 next();
 
             } catch (err: any) {
-                logger.error("❌ sanitize-html middleware failed", {
+                logger.error("sanitize-html middleware failed", {
                     error: err?.message || err
                 });
                 next(err);

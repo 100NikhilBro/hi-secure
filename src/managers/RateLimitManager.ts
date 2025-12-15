@@ -64,7 +64,7 @@ export class RateLimitManager {
                 k => !allowedOverrides.includes(k) && k !== 'mode'
             );
             if (attemptedOverrides.length > 0) {
-                logger.warn("⚠ Rate limit overrides ignored", {
+                logger.warn("Rate limit overrides ignored", {
                     preset: opts?.mode || 'default',
                     ignoredOptions: attemptedOverrides
                 });
@@ -79,7 +79,7 @@ export class RateLimitManager {
         }
 
         try {
-            logger.info("📌 Applying rate limiting", {
+            logger.info("Applying rate limiting", {
                 mode: opts?.mode || 'default',
                 windowMs: finalOptions.windowMs,
                 max: finalOptions.max
@@ -87,7 +87,7 @@ export class RateLimitManager {
             
             return this.primaryAdapter.getMiddleware(finalOptions);
         } catch (err: any) {
-            logger.warn("⚠ Primary rate limiter failed → fallback", {
+            logger.warn("Primary rate limiter failed → fallback", {
                 error: err?.message
             });
 
@@ -96,10 +96,10 @@ export class RateLimitManager {
             }
 
             try {
-                logger.info("📌 Using fallback rate limiter");
+                logger.info("Using fallback rate limiter");
                 return this.fallbackAdapter.getMiddleware(finalOptions);
             } catch (fallbackErr: any) {
-                logger.error("❌ Fallback limiter also failed", {
+                logger.error("Fallback limiter also failed", {
                     error: fallbackErr?.message
                 });
                 throw new AdapterError("Both primary and fallback limiters failed.");
