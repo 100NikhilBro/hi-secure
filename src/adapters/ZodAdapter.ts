@@ -27,7 +27,7 @@ export class ZodAdapter {
                 code: issue.code
             }));
 
-            logger.warn("⚠ Zod validation failed", {
+            logger.warn("Zod validation failed", {
                 path: req.path,
                 method: req.method,
                 issues,

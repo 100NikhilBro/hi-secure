@@ -24,7 +24,7 @@ export function errorHandler(
             : undefined;
 
     
-    logger.error("❌ HiSecure Error", {
+    logger.error("HiSecure Error", {
         type: err?.name || "UnknownError",
         message,
         status: err?.status,
@@ -63,7 +63,7 @@ export function errorHandler(
         });
     }
 
-    // 4. Adapter Errors (hashing, rate-limit, sanitizer, validator ...)
+    // 4. Adapter Errors - hashing, rate-limit, sanitizer, validator
     if (err instanceof AdapterError) {
         return res.status(500).json({
             success: false,
@@ -81,7 +81,7 @@ export function errorHandler(
         });
     }
 
-    // 6. Fallback → Unexpected
+    // 6. Fallback - Unexpected
     return res.status(500).json({
         success: false,
         error: "INTERNAL_SERVER_ERROR",

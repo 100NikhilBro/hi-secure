@@ -23,13 +23,13 @@ export class SanitizerManager {
         try {
             return this.primary.sanitize(value, options);
         } catch (err: any) {
-            logger.warn("⚠ Primary sanitizer failed", { error: err?.message });
+            logger.warn("Primary sanitizer failed", { error: err?.message });
 
             if (!this.fallback) {
                 throw new SanitizerError("Primary sanitizer failed and no fallback available.");
             }
 
-            logger.info("📌 Using fallback sanitizer");
+            logger.info("Using fallback sanitizer");
             return this.fallback.sanitize(value, options);
         }
     }
@@ -52,7 +52,7 @@ export class SanitizerManager {
                     }
                     
                     fallbackTriggered = true;
-                    logger.warn("⚠ Switching to fallback sanitizer for this request");
+                    logger.warn("Switching to fallback sanitizer for this request");
                     return this.fallback.sanitize(value, options);
                 }
             };
@@ -81,7 +81,7 @@ export class SanitizerManager {
                     
                     req.sanitizedBody = sanitizedBody;
                     
-                    logger.debug("🧼 Request body sanitized", {
+                    logger.debug("Request body sanitized", {
                         originalKeys: Object.keys(originalBody),
                         sanitizedKeys: Object.keys(sanitizedBody),
                         usedFallback: fallbackTriggered
@@ -90,7 +90,7 @@ export class SanitizerManager {
 
                 next();
             } catch (err: any) {
-                logger.error("❌ Sanitizer middleware failed", {
+                logger.error("Sanitizer middleware failed", {
                     error: err?.message
                 });
                 next(new SanitizerError("Sanitizer middleware failure"));

@@ -37,7 +37,7 @@ export class RLFlexibleAdapter {
                 } catch (err: any) {
                     const rlErr = err as RateLimiterRes;
 
-                    logger.warn("⚠ RLFlexibleAdapter: rate limit exceeded", {
+                    logger.warn("RLFlexibleAdapter: rate limit exceeded", {
                         ip,
                         path: req.path,
                         method: req.method,
@@ -56,7 +56,7 @@ export class RLFlexibleAdapter {
             };
 
         } catch (err: any) {
-            logger.error("❌ RLFlexibleAdapter: failed to initialize limiter", {
+            logger.error("RLFlexibleAdapter: failed to initialize limiter", {
                 error: err?.message || err
             });
             throw new AdapterError("RateLimiterFlexible creation failed.");

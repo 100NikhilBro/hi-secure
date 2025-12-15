@@ -13,7 +13,7 @@ export class BcryptAdapter {
 
             return await bcrypt.hash(value, this.saltRounds);
         } catch (err: any) {
-            logger.error("❌ Bcrypt hashing failed", {
+            logger.error("Bcrypt hashing failed", {
                 error: err?.message || err,
                 saltRounds: this.saltRounds
             });
@@ -34,7 +34,7 @@ export class BcryptAdapter {
 
             return await bcrypt.compare(value, hashed);
         } catch (err: any) {
-            logger.error("❌ Bcrypt verify failed", {
+            logger.error("Bcrypt verify failed", {
                 error: err?.message || err
             });
 

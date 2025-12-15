@@ -13,7 +13,7 @@ export class JsonManager {
             };
             return express.json({ ...defaultOptions, ...(options || {}) });
         } catch (err: any) {
-            logger.error("❌ JSON Manager: failed to create JSON parser");
+            logger.error("JSON Manager: failed to create JSON parser");
             throw new AdapterError("JSON parser initialization failed.");
         }
     }
@@ -28,7 +28,7 @@ export class JsonManager {
             const opts = { ...defaultOptions, ...(options || {}) };
             return express.urlencoded(opts);
         } catch (err: any) {
-            logger.error("❌ URL-encoded parser failed");
+            logger.error("URL-encoded parser failed");
             throw new AdapterError("URL-encoded parser initialization failed.");
         }
     }
@@ -45,13 +45,13 @@ export class JsonManager {
                     });
                     
                     req.parsedQuery = parsed;
-                    logger.debug("🔍 Query parsed", {
+                    logger.debug(" Query parsed", {
                         keys: Object.keys(parsed)
                     });
                 }
                 next();
             } catch (err: any) {
-                logger.error("❌ Failed to parse query", { error: err?.message });
+                logger.error("Failed to parse query", { error: err?.message });
                 next(new AdapterError("Query parsing failed."));
             }
         };

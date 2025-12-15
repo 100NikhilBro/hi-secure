@@ -37,7 +37,7 @@ export class HashManager {
                 usedFallback: false
             };
         } catch (err: any) {
-            logger.warn("⚠ Primary hashing failed", {
+            logger.warn("Primary hashing failed", {
                 error: err.message,
                 algorithm: this.config.primary
             });
@@ -52,7 +52,7 @@ export class HashManager {
                 const hash = await this.fallbackAdapter.hash(value);
                 
                 // Log security downgrade warning
-                logger.warn("⚠ SECURITY DOWNGRADE: Using fallback hashing", {
+                logger.warn("SECURITY DOWNGRADE: Using fallback hashing", {
                     from: this.config.primary,
                     to: this.config.fallback
                 });
@@ -63,7 +63,7 @@ export class HashManager {
                     usedFallback: true
                 };
             } catch (fallbackErr: any) {
-                logger.error("❌ Fallback hashing failed", {
+                logger.error("Fallback hashing failed", {
                     error: fallbackErr?.message,
                 });
                 throw new AdapterError(
@@ -74,20 +74,20 @@ export class HashManager {
     }
 
     async verify(value: string, hashed: string): Promise<boolean> {
-        // Try primary adapter first
+        //  primary adapter - first
         try {
             return await this.primaryAdapter.verify(value, hashed);
         } catch (primaryErr: any) {
-            logger.warn("⚠ Primary verify failed", {
+            logger.warn("Primary verify failed", {
                 error: primaryErr?.message,
             });
 
-            // If fallback exists, try it
+            //  fallback exists -  try it
             if (this.fallbackAdapter) {
                 try {
                     return await this.fallbackAdapter.verify(value, hashed);
                 } catch (fallbackErr: any) {
-                    logger.error("❌ Fallback verify failed", {
+                    logger.error(" Fallback verify failed", {
                         error: fallbackErr?.message,
                     });
                     throw new AdapterError(

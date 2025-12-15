@@ -6,13 +6,12 @@ import { SecureOptions } from "./types/SecureOptions.js";
  */
 
 export function useSecure(options?: SecureOptions | "api" | "strict" | "public") {
-    console.warn("⚠ useSecure() is deprecated. Use HiSecure.middleware() or fluent API methods.");
+    console.warn("useSecure() is deprecated. Use HiSecure.middleware() or fluent API methods.");
     return HiSecure.middleware(options);
 }
 
 
 //  Legacy support - route-level security
-
 
 export function secureRoute(options?: SecureOptions) {
     const chain: any[] = [];
@@ -45,7 +44,6 @@ export function secureRoute(options?: SecureOptions) {
             typeof options.auth === 'object' ? options.auth : undefined
         ));
     }
-    
     return chain;
 }
 

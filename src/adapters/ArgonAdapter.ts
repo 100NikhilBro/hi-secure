@@ -17,7 +17,7 @@ export class ArgonAdapter {
                 ? await argon2.hash(value, this.options)
                 : await argon2.hash(value);
         } catch (err: any) {
-            logger.error("❌ Argon2 hashing failed", {
+            logger.error("Argon2 hashing failed", {
                 error: err?.message || err
             });
             throw new AdapterError("Argon2 hashing failed.");
@@ -32,7 +32,7 @@ export class ArgonAdapter {
 
             return await argon2.verify(hashed, value);
         } catch (err: any) {
-            logger.error("❌ Argon2 verify failed", {
+            logger.error("Argon2 verify failed", {
                 error: err?.message || err
             });
             throw new AdapterError("Argon2 verify failed.");

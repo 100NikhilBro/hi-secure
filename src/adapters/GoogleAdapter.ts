@@ -35,7 +35,7 @@ export class GoogleAdapter {
                 idToken 
             };
 
-            // Add audience only if clientId is provided and not empty
+            // audience only if clientId is provided and not empty
             if (this.clientId && this.clientId.trim().length > 0) {
                 options.audience = this.clientId;
             }
@@ -48,7 +48,7 @@ export class GoogleAdapter {
                 throw new AdapterError("Invalid Google ID token payload.");
             }
 
-            // Create result object
+            // result object
             const result: GoogleTokenPayload = {
                 sub: payload.sub,
                 email: payload.email || '',
@@ -57,7 +57,7 @@ export class GoogleAdapter {
                 picture: payload.picture
             };
 
-            // Add remaining properties from payload (excluding duplicates)
+            // remaining properties from payload 
             const { sub, email, email_verified, name, picture, ...rest } = payload;
             Object.assign(result, rest);
 

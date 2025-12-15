@@ -27,11 +27,11 @@ export class ValidatorManager {
             let middleware;
 
             if (isZod) {
-                logger.debug("📌 Using Zod adapter");
+                logger.debug("Using Zod adapter");
                 middleware = this.zodAdapter.validate(schema);
             } 
             else if (isExpressValidator) {
-                logger.debug("📌 Using express-validator adapter");
+                logger.debug(" Using express-validator adapter");
                 middleware = this.expressAdapter.validate(schema);
             } 
             else {

@@ -60,7 +60,7 @@ export class XSSAdapter {
             return customFilter.process(input);
 
         } catch (err: any) {
-            logger.error("❌ XSS sanitizer failed", {
+            logger.error("XSS sanitizer failed", {
                 error: err?.message,
                 preview: input?.slice?.(0, 80)
             });
@@ -98,7 +98,7 @@ export class XSSAdapter {
                    
                     req.sanitizedBody = sanitizedBody;
                     
-                    logger.debug("🛡️ XSS sanitizer applied", {
+                    logger.debug("XSS sanitizer applied", {
                         originalKeys: Object.keys(originalBody),
                         sanitizedKeys: Object.keys(sanitizedBody)
                     });
@@ -106,7 +106,7 @@ export class XSSAdapter {
 
                 next();
             } catch (err: any) {
-                logger.error("❌ XSS middleware failed", {
+                logger.error("XSS middleware failed", {
                     error: err?.message || err
                 });
                 next(err);
