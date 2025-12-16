@@ -563,4 +563,4 @@ We are actively working on extended documentation:<br/>
 <strong>Advanced patterns, RBAC examples, custom adapters, deployment setups & best practices.</strong>
 </p>
 
-<p align="center"><i>Updates coming soon.</i></p>
+<p align="center"><i>Updates coming soon.....</i></p>
