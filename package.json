@@ -1,6 +1,6 @@
 {
     "name": "hi-secure",
-    "version": "1.0.20",
+    "version": "1.0.21",
     "description": "Unified security layer for Express.js: authentication, validation, sanitization, rate limiting and CORS",
     "license": "MIT",
     "main": "dist/index.js",
