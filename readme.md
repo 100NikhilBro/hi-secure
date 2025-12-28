@@ -97,7 +97,7 @@ Managing these separately leads to duplicated logic, configuration drift and sub
 
   <tr>
   <td>Logging</td>
-  <td>Improved (v1.0.17)</td>
+  <td>Improved</td>
   <td>
     Structured, lifecycle-aware logs with adapter, manager and fallback visibility.
     Designed for production debugging without leaking sensitive data.
@@ -112,7 +112,7 @@ Managing these separately leads to duplicated logic, configuration drift and sub
 
 <hr/>
 
-<h2>What’s New in v1.0.18</h2>
+<h2>What’s New in latest versions</h2>
 
 <ul>
   <li>Improved structured logging across core lifecycle</li>
