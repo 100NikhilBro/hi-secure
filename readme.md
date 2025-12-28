@@ -96,20 +96,38 @@ Managing these separately leads to duplicated logic, configuration drift and sub
   </tr>
 
   <tr>
-    <td>Logging</td>
-    <td>Better</td>
-    <td>Structured internal logs</td>
-  </tr>
+  <td>Logging</td>
+  <td>Improved (v1.0.17)</td>
+  <td>
+    Structured, lifecycle-aware logs with adapter, manager and fallback visibility.
+    Designed for production debugging without leaking sensitive data.
+  </td>
+</tr>
+
 </table>
 
 <hr/>
+
+
+<hr/>
+
+<h2>What’s New in v1.0.17</h2>
+
+<ul>
+  <li>Improved structured logging across core lifecycle</li>
+  <li>Clear visibility into adapter initialization and fallbacks</li>
+  <li>Layer-based logs (core, managers, adapters) for easier debugging</li>
+  <li>No public API changes (safe patch release)</li>
+</ul>
+
+
 
 <h2>Developer Experience</h2>
 
 <ul>
   <li>Single global middleware for security</li>
   <li>No manual wiring of multiple packages</li>
-  <li>Consistent error handling</li>
+  <li>Consistent error handling and lifecycle-aware logging</li>
   <li>Safe defaults with escape hatches</li>
   <li>Beginner-friendly, production-ready</li>
 </ul>
