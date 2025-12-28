@@ -1,6 +1,52 @@
+// import { ZodSchema, ZodError } from "zod";
+// import { ValidationError } from "../core/errors/ValidationError.js"; 
+// import { logger } from "../logging/index.js";
+
+// export class ZodAdapter {
+//     private globalSchema?: ZodSchema;
+
+//     constructor(globalSchema?: ZodSchema) {
+//         this.globalSchema = globalSchema;
+//     }
+
+//     validate(dynamicSchema?: ZodSchema) {
+//         return (req: any, res: any, next: any) => {
+//             const schema = dynamicSchema || this.globalSchema;
+
+//             if (!schema) return next();
+
+//             const result = schema.safeParse(req.body);
+
+//             if (result.success) return next();
+
+//             const zodErr: ZodError = result.error;
+
+//             const issues = zodErr.issues.map(issue => ({
+//                 message: issue.message,
+//                 path: issue.path.join("."),
+//                 code: issue.code
+//             }));
+
+//             logger.warn("Zod validation failed", {
+//                 path: req.path,
+//                 method: req.method,
+//                 issues,
+//                 preview: JSON.stringify(req.body).slice(0, 200)
+//             });
+
+//             return next(
+//                 new ValidationError("Validation failed.", issues as any) 
+//             );
+//         };
+//     }
+// }
+
+
+
+
 import { ZodSchema, ZodError } from "zod";
-import { ValidationError } from "../core/errors/ValidationError.js"; 
-import { logger } from "../logging/index.js";
+import { ValidationError } from "../core/errors/ValidationError";
+import { logger } from "../logging";
 
 export class ZodAdapter {
     private globalSchema?: ZodSchema;
@@ -10,13 +56,11 @@ export class ZodAdapter {
     }
 
     validate(dynamicSchema?: ZodSchema) {
-        return (req: any, res: any, next: any) => {
+        return (req: any, _res: any, next: any) => {
             const schema = dynamicSchema || this.globalSchema;
-
             if (!schema) return next();
 
             const result = schema.safeParse(req.body);
-
             if (result.success) return next();
 
             const zodErr: ZodError = result.error;
@@ -28,14 +72,16 @@ export class ZodAdapter {
             }));
 
             logger.warn("Zod validation failed", {
-                path: req.path,
+                adapter: "zod",
+                operation: "validate",
                 method: req.method,
-                issues,
-                preview: JSON.stringify(req.body).slice(0, 200)
+                path: req.path,
+                issueCount: issues.length,
+                issues
             });
 
             return next(
-                new ValidationError("Validation failed.", issues as any) 
+                new ValidationError("Validation failed.", issues as any)
             );
         };
     }

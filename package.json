@@ -2,13 +2,11 @@
     "name": "hi-secure",
     "version": "1.0.15",
     "description": "Unified security layer for Express.js: authentication, validation, sanitization, rate limiting and CORS",
+    "license": "MIT",
+
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/100NikhilBro/hi-secure.git"
-    },
-    "homepage": "https://github.com/100NikhilBro/hi-secure#readme",
+
     "keywords": [
         "express",
         "security",
@@ -25,14 +23,17 @@
         "nodejs",
         "backend"
     ],
+
     "scripts": {
         "build": "tsc",
         "dev": "tsx watch src/index.ts",
         "start": "node dist/index.js"
     },
+
     "peerDependencies": {
         "express": "^4.17.0 || ^5.0.0"
     },
+
     "dependencies": {
         "argon2": "^0.44.0",
         "bcryptjs": "^3.0.3",
@@ -54,6 +55,7 @@
         "xss": "^1.0.15",
         "zod": "^4.1.13"
     },
+
     "devDependencies": {
         "@types/compression": "^1.8.1",
         "@types/cors": "^2.8.19",

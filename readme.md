@@ -97,7 +97,7 @@ Managing these separately leads to duplicated logic, configuration drift and sub
 
   <tr>
     <td>Logging</td>
-    <td>Beta</td>
+    <td>Better</td>
     <td>Structured internal logs</td>
   </tr>
 </table>
@@ -324,7 +324,7 @@ Choose the style based on complexity and ownership.
 
 <h4>express-validator (Rule-Based, Inline)</h4>
 
-<pre><code>import { body } from "express-validator";
+<pre><code>import { HiSecure , body } from "hi-secure";
 
 router.post(
   "/register",
@@ -346,7 +346,7 @@ router.post(
 
 <h4>Zod (Schema-Based, Reusable)</h4>
 
-<pre><code>import { z } from "zod";
+<pre><code>import { HiSecure , z } from "hi-secure";
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -455,9 +455,6 @@ HiSecure.getInstance({
 
 <hr/>
 
-<h2>Final Authentication Setup</h2>
-
-<hr/>
 
 <h2>🔐 Final Authentication Setup</h2>
 

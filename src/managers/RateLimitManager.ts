@@ -1,5 +1,118 @@
-import { HiSecureConfig } from "../core/types/HiSecureConfig.js";
-import { AdapterError } from "../core/errors/AdapterError.js";
+// import { HiSecureConfig } from "../core/types/HiSecureConfig.js";
+// import { AdapterError } from "../core/errors/AdapterError.js";
+// import { logger } from "../logging";
+
+// interface RateLimiterAdapter {
+//     getMiddleware: (options?: any) => any;
+// }
+
+// export class RateLimitManager {
+//     private config: HiSecureConfig["rateLimiter"];
+//     private primaryAdapter: RateLimiterAdapter;
+//     private fallbackAdapter: RateLimiterAdapter | null;
+
+//     constructor(
+//         config: HiSecureConfig["rateLimiter"],
+//         primaryAdapter: RateLimiterAdapter,
+//         fallbackAdapter: RateLimiterAdapter | null
+//     ) {
+//         this.config = config;
+//         this.primaryAdapter = primaryAdapter;
+//         this.fallbackAdapter = fallbackAdapter;
+//     }
+
+//     middleware(opts?: { mode?: "strict" | "relaxed" | "api"; options?: any }) {
+//         let finalOptions: any = {};
+
+//         if (opts?.mode === "strict") {
+//             finalOptions = {
+//                 windowMs: 10_000,
+//                 max: 5,
+//                 message: "Too many requests, please slow down."
+//             };
+//         } else if (opts?.mode === "relaxed") {
+//             finalOptions = {
+//                 windowMs: 60_000,
+//                 max: 100,
+//                 message: "Rate limit exceeded."
+//             };
+//         } else if (opts?.mode === "api") {
+//             finalOptions = {
+//                 windowMs: 15 * 60 * 1000, 
+//                 max: 100,
+//                 message: "API rate limit exceeded."
+//             };
+//         } else {
+//             finalOptions = {
+//                 windowMs: this.config.windowMs,
+//                 max: this.config.maxRequests,
+//                 message: this.config.message,
+//                 standardHeaders: true,      
+//                 legacyHeaders: false        
+//             };
+//         }
+
+//         if (opts?.options) {
+//             const allowedOverrides = ['message', 'skipFailedRequests', 'standardHeaders', 'legacyHeaders'];
+//             for (const key of allowedOverrides) {
+//                 if (opts.options[key] !== undefined) {
+//                     finalOptions[key] = opts.options[key];
+//                 }
+//             }
+            
+//             const attemptedOverrides = Object.keys(opts.options).filter(
+//                 k => !allowedOverrides.includes(k) && k !== 'mode'
+//             );
+//             if (attemptedOverrides.length > 0) {
+//                 logger.warn("Rate limit overrides ignored", {
+//                     preset: opts?.mode || 'default',
+//                     ignoredOptions: attemptedOverrides
+//                 });
+//             }
+//         }
+
+//         if (finalOptions.standardHeaders === undefined) {
+//             finalOptions.standardHeaders = true;
+//         }
+//         if (finalOptions.legacyHeaders === undefined) {
+//             finalOptions.legacyHeaders = false;
+//         }
+
+//         try {
+//             logger.info("Applying rate limiting", {
+//                 mode: opts?.mode || 'default',
+//                 windowMs: finalOptions.windowMs,
+//                 max: finalOptions.max
+//             });
+            
+//             return this.primaryAdapter.getMiddleware(finalOptions);
+//         } catch (err: any) {
+//             logger.warn("Primary rate limiter failed → fallback", {
+//                 error: err?.message
+//             });
+
+//             if (!this.fallbackAdapter) {
+//                 throw new AdapterError("Rate limiters failed; no fallback adapter.");
+//             }
+
+//             try {
+//                 logger.info("Using fallback rate limiter");
+//                 return this.fallbackAdapter.getMiddleware(finalOptions);
+//             } catch (fallbackErr: any) {
+//                 logger.error("Fallback limiter also failed", {
+//                     error: fallbackErr?.message
+//                 });
+//                 throw new AdapterError("Both primary and fallback limiters failed.");
+//             }
+//         }
+//     }
+// }
+
+
+
+
+import { HiSecureConfig } from "../core/types/HiSecureConfig";
+import { AdapterError } from "../core/errors/AdapterError";
 import { logger } from "../logging";
 
 interface RateLimiterAdapter {
@@ -19,26 +132,33 @@ export class RateLimitManager {
         this.config = config;
         this.primaryAdapter = primaryAdapter;
         this.fallbackAdapter = fallbackAdapter;
+
+        logger.info("RateLimitManager initialized", {
+            layer: "rate-limit-manager",
+            primaryConfigured: true,
+            fallbackConfigured: !!fallbackAdapter
+        });
     }
 
     middleware(opts?: { mode?: "strict" | "relaxed" | "api"; options?: any }) {
         let finalOptions: any = {};
+        const mode = opts?.mode || "default";
 
-        if (opts?.mode === "strict") {
+        if (mode === "strict") {
             finalOptions = {
                 windowMs: 10_000,
                 max: 5,
                 message: "Too many requests, please slow down."
             };
-        } else if (opts?.mode === "relaxed") {
+        } else if (mode === "relaxed") {
             finalOptions = {
                 windowMs: 60_000,
                 max: 100,
                 message: "Rate limit exceeded."
             };
-        } else if (opts?.mode === "api") {
+        } else if (mode === "api") {
             finalOptions = {
-                windowMs: 15 * 60 * 1000, 
+                windowMs: 15 * 60 * 1000,
                 max: 100,
                 message: "API rate limit exceeded."
             };
@@ -47,62 +167,87 @@ export class RateLimitManager {
                 windowMs: this.config.windowMs,
                 max: this.config.maxRequests,
                 message: this.config.message,
-                standardHeaders: true,      
-                legacyHeaders: false        
+                standardHeaders: true,
+                legacyHeaders: false
             };
         }
 
         if (opts?.options) {
-            const allowedOverrides = ['message', 'skipFailedRequests', 'standardHeaders', 'legacyHeaders'];
+            const allowedOverrides = [
+                "message",
+                "skipFailedRequests",
+                "standardHeaders",
+                "legacyHeaders"
+            ];
+
             for (const key of allowedOverrides) {
                 if (opts.options[key] !== undefined) {
                     finalOptions[key] = opts.options[key];
                 }
             }
-            
+
             const attemptedOverrides = Object.keys(opts.options).filter(
-                k => !allowedOverrides.includes(k) && k !== 'mode'
+                k => !allowedOverrides.includes(k) && k !== "mode"
             );
+
             if (attemptedOverrides.length > 0) {
                 logger.warn("Rate limit overrides ignored", {
-                    preset: opts?.mode || 'default',
+                    layer: "rate-limit-manager",
+                    operation: "configure",
+                    mode,
                     ignoredOptions: attemptedOverrides
                 });
             }
         }
 
-        if (finalOptions.standardHeaders === undefined) {
-            finalOptions.standardHeaders = true;
-        }
-        if (finalOptions.legacyHeaders === undefined) {
-            finalOptions.legacyHeaders = false;
-        }
+        finalOptions.standardHeaders ??= true;
+        finalOptions.legacyHeaders ??= false;
 
         try {
-            logger.info("Applying rate limiting", {
-                mode: opts?.mode || 'default',
+            logger.info("Rate limiting applied", {
+                layer: "rate-limit-manager",
+                operation: "apply",
+                mode,
                 windowMs: finalOptions.windowMs,
                 max: finalOptions.max
             });
-            
+
             return this.primaryAdapter.getMiddleware(finalOptions);
+
         } catch (err: any) {
-            logger.warn("Primary rate limiter failed → fallback", {
-                error: err?.message
+            logger.warn("Primary rate limiter failed", {
+                layer: "rate-limit-manager",
+                operation: "apply",
+                mode,
+                reason: err?.message
             });
 
             if (!this.fallbackAdapter) {
-                throw new AdapterError("Rate limiters failed; no fallback adapter.");
+                throw new AdapterError(
+                    "Rate limiters failed; no fallback adapter configured."
+                );
             }
 
             try {
-                logger.info("Using fallback rate limiter");
-                return this.fallbackAdapter.getMiddleware(finalOptions);
-            } catch (fallbackErr: any) {
-                logger.error("Fallback limiter also failed", {
-                    error: fallbackErr?.message
+                logger.warn("Using fallback rate limiter", {
+                    layer: "rate-limit-manager",
+                    operation: "fallback",
+                    mode
                 });
-                throw new AdapterError("Both primary and fallback limiters failed.");
+
+                return this.fallbackAdapter.getMiddleware(finalOptions);
+
+            } catch (fallbackErr: any) {
+                logger.error("Fallback rate limiter failed", {
+                    layer: "rate-limit-manager",
+                    operation: "fallback",
+                    mode,
+                    reason: fallbackErr?.message
+                });
+
+                throw new AdapterError(
+                    "Both primary and fallback rate limiters failed."
+                );
             }
         }
     }

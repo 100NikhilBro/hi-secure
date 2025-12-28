@@ -1,7 +1,102 @@
+// import jwt from "jsonwebtoken";
+// import { randomUUID } from "crypto"; 
+// import { AdapterError } from "../core/errors/AdapterError.js";
+// import { logError } from "../logging/index.js";
+// import { logger } from "../logging";
+
+// export interface JWTAdapterOptions {
+//     secret: string;
+//     expiresIn?: string | number;
+//     algorithm?: jwt.Algorithm;
+//     issuer?: string;
+//     audience?: string | string[];
+// }
+
+// export interface SignOptions {
+//     expiresIn?: string | number;
+//     jti?: string; 
+//     subject?: string;
+//     issuer?: string;
+//     audience?: string | string[];
+// }
+
+// export class JWTAdapter {
+//     private secret: string;
+//     private expiresIn?: string | number;
+//     private algorithm: jwt.Algorithm;
+//     private issuer?: string;
+//     private audience?: string | string[];
+
+//     constructor(options: JWTAdapterOptions) {
+//         if (!options.secret) {
+//             throw new AdapterError("JWT secret is required");
+//         }
+
+//         if (options.secret.length < 32) {
+//             logger.warn("JWT secret shorter than 32 chars. Consider using stronger secret.");
+//             // logError("JWT secret is too short (minimum 32 characters recommended)");
+//         }
+
+//         this.secret = options.secret;
+//         this.expiresIn = options.expiresIn;
+//         this.algorithm = options.algorithm || 'HS256'; // Default algorithm 
+//         this.issuer = options.issuer;
+//         this.audience = options.audience;
+//     }
+
+//     sign(payload: object, options?: SignOptions) {
+//         try {
+//             const jwtOptions: jwt.SignOptions = {
+//                 algorithm: this.algorithm,
+//                 issuer: options?.issuer || this.issuer,
+//                 audience: options?.audience || this.audience,
+//                 jwtid: options?.jti || randomUUID(), 
+//                 subject: options?.subject
+//             };
+
+//             if (options?.expiresIn !== undefined) {
+//                 jwtOptions.expiresIn = options.expiresIn as number;
+//             } else if (this.expiresIn !== undefined) {
+//                 jwtOptions.expiresIn = this.expiresIn as number;
+//             }
+
+//             return jwt.sign(payload, this.secret, jwtOptions);
+
+//         } catch (err: any) {
+//             logError("JWTAdapter.sign failed", { error: err?.message });
+//             throw new AdapterError(err?.message || "JWT sign failed");
+//         }
+//     }
+
+//     verify(token: string, options?: { audience?: string | string[] }) {
+//         try {
+//             const verifyOptions: jwt.VerifyOptions = {
+//                 algorithms: [this.algorithm],
+//                 issuer: this.issuer,
+//                 audience: options?.audience as string || this.audience as string
+//             };
+
+//             return jwt.verify(token, this.secret, verifyOptions);
+//         } catch (err: any) {
+//             logError("JWTAdapter.verify failed", { error: err?.message });
+            
+           
+//             if (err.name === 'TokenExpiredError') {
+//                 throw new AdapterError("JWT token has expired");
+//             }
+//             if (err.name === 'JsonWebTokenError') {
+//                 throw new AdapterError("Invalid JWT token");
+//             }
+            
+//             throw new AdapterError(err?.message || "JWT verification failed");
+//         }
+//     }
+// }
+
+
 import jwt from "jsonwebtoken";
-import { randomUUID } from "crypto"; 
-import { AdapterError } from "../core/errors/AdapterError.js";
-import { logError } from "../logging/index.js";
+import { randomUUID } from "crypto";
+import { AdapterError } from "../core/errors/AdapterError";
 import { logger } from "../logging";
 
 export interface JWTAdapterOptions {
@@ -14,7 +109,7 @@ export interface JWTAdapterOptions {
 
 export interface SignOptions {
     expiresIn?: string | number;
-    jti?: string; 
+    jti?: string;
     subject?: string;
     issuer?: string;
     audience?: string | string[];
@@ -33,13 +128,16 @@ export class JWTAdapter {
         }
 
         if (options.secret.length < 32) {
-            logger.warn("JWT secret shorter than 32 chars. Consider using stronger secret.");
-            // logError("JWT secret is too short (minimum 32 characters recommended)");
+            logger.warn("Weak JWT secret detected", {
+                adapter: "jwt",
+                operation: "init",
+                secretLength: options.secret.length
+            });
         }
 
         this.secret = options.secret;
         this.expiresIn = options.expiresIn;
-        this.algorithm = options.algorithm || 'HS256'; // Default algorithm 
+        this.algorithm = options.algorithm || "HS256";
         this.issuer = options.issuer;
         this.audience = options.audience;
     }
@@ -50,21 +148,26 @@ export class JWTAdapter {
                 algorithm: this.algorithm,
                 issuer: options?.issuer || this.issuer,
                 audience: options?.audience || this.audience,
-                jwtid: options?.jti || randomUUID(), 
+                jwtid: options?.jti || randomUUID(),
                 subject: options?.subject
             };
 
             if (options?.expiresIn !== undefined) {
-                jwtOptions.expiresIn = options.expiresIn as number;
+                jwtOptions.expiresIn = options.expiresIn as any;
             } else if (this.expiresIn !== undefined) {
-                jwtOptions.expiresIn = this.expiresIn as number;
+                jwtOptions.expiresIn = this.expiresIn as any;
             }
 
             return jwt.sign(payload, this.secret, jwtOptions);
 
         } catch (err: any) {
-            logError("JWTAdapter.sign failed", { error: err?.message });
-            throw new AdapterError(err?.message || "JWT sign failed");
+            logger.error("JWT signing failed", {
+                adapter: "jwt",
+                operation: "sign",
+                reason: err?.message
+            });
+
+            throw new AdapterError("JWT sign failed");
         }
     }
 
@@ -73,22 +176,27 @@ export class JWTAdapter {
             const verifyOptions: jwt.VerifyOptions = {
                 algorithms: [this.algorithm],
                 issuer: this.issuer,
-                audience: options?.audience as string || this.audience as string
+                audience: (options?.audience || this.audience) as string
             };
 
             return jwt.verify(token, this.secret, verifyOptions);
+
         } catch (err: any) {
-            logError("JWTAdapter.verify failed", { error: err?.message });
-            
-           
-            if (err.name === 'TokenExpiredError') {
+            logger.error("JWT verification failed", {
+                adapter: "jwt",
+                operation: "verify",
+                reason: err?.message
+            });
+
+            if (err?.name === "TokenExpiredError") {
                 throw new AdapterError("JWT token has expired");
             }
-            if (err.name === 'JsonWebTokenError') {
+
+            if (err?.name === "JsonWebTokenError") {
                 throw new AdapterError("Invalid JWT token");
             }
-            
-            throw new AdapterError(err?.message || "JWT verification failed");
+
+            throw new AdapterError("JWT verification failed");
         }
     }
 }
