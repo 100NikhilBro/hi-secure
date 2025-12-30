@@ -30,7 +30,7 @@ import hpp from "hpp";
 import compression from "compression";
 import { errorHandler } from "../middlewares/errorHandler.js";
 
-// Types
+
 import { SecureOptions, ValidationSchema } from "./types/SecureOptions.js";
 
 export class HiSecure {
@@ -60,7 +60,6 @@ export class HiSecure {
     }
 
     // Singleton & Init
-
     static getInstance(config?: Partial<HiSecureConfig>): HiSecure {
         if (!HiSecure.instance) {
             logger.info("Creating HiSecure singleton", {
@@ -102,8 +101,7 @@ export class HiSecure {
         });
     }
 
-    // Public Fluent APIs
-    
+
 
     static auth(options?: { required?: boolean; roles?: string[] }) {
         const instance = this.getInstance();
@@ -154,7 +152,6 @@ export class HiSecure {
     }
 
     // Utilities
-
     static async hash(value: string): Promise<string> {
         const instance = this.getInstance();
         const result = await instance.hashManager.hash(value, { allowFallback: true });
@@ -179,7 +176,6 @@ export class HiSecure {
     };
 
     // Global Middleware
-
     static middleware(options?: SecureOptions | "api" | "strict" | "public") {
         const instance = this.getInstance();
 
