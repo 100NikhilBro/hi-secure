@@ -17,7 +17,7 @@ export class CorsManager {
                 ? { ...defaultOptions, ...options }
                 : defaultOptions;
 
-            // ✅ visible + clean log
+            
             logger.info("CORS middleware configured", {
                 layer: "cors-manager",
                 operation: "init",

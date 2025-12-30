@@ -98,7 +98,7 @@ export class SanitizerManager {
 
                     req.sanitizedBody = sanitizedBody;
 
-                    // ✅ visible + safe info
+                    
                     logger.info("Request body sanitized", {
                         layer: "sanitizer-manager",
                         operation: "middleware",

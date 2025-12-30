@@ -34,6 +34,20 @@ export class HashManager {
         });
     }
 
+   
+    private detectAlgorithm(hashed: string): string {
+        if (hashed.startsWith("$argon2")) return "argon2";
+        if (
+            hashed.startsWith("$2a$") ||
+            hashed.startsWith("$2b$") ||
+            hashed.startsWith("$2y$")
+        ) {
+            return "bcrypt";
+        }
+
+        throw new AdapterError("Unknown hash algorithm");
+    }
+
     async hash(
         value: string,
         options?: { allowFallback?: boolean }
@@ -64,7 +78,6 @@ export class HashManager {
             try {
                 const hash = await this.fallbackAdapter.hash(value);
 
-                // ⚠️ security downgrade log (VERY GOOD PRACTICE)
                 logger.warn("Hashing fallback used (security downgrade)", {
                     layer: "hash-manager",
                     operation: "hash",
@@ -94,40 +107,29 @@ export class HashManager {
         }
     }
 
+    
     async verify(value: string, hashed: string): Promise<boolean> {
-        try {
-            return await this.primaryAdapter.verify(value, hashed);
+        const algorithm = this.detectAlgorithm(hashed);
 
-        } catch (primaryErr: any) {
-            logger.warn("Primary hash verification failed", {
+        if (algorithm === this.config.primary) {
+            return this.primaryAdapter.verify(value, hashed);
+        }
+
+        if (
+            algorithm === this.config.fallback &&
+            this.fallbackAdapter
+        ) {
+            logger.warn("Verifying legacy hash using fallback adapter", {
                 layer: "hash-manager",
                 operation: "verify",
-                algorithm: this.config.primary,
-                reason: primaryErr?.message
+                algorithm
             });
 
-            if (this.fallbackAdapter) {
-                try {
-                    return await this.fallbackAdapter.verify(value, hashed);
-
-                } catch (fallbackErr: any) {
-                    logger.error("Fallback hash verification failed", {
-                        layer: "hash-manager",
-                        operation: "verify",
-                        from: this.config.primary,
-                        to: this.config.fallback,
-                        reason: fallbackErr?.message
-                    });
-
-                    throw new AdapterError(
-                        "Both primary and fallback verify failed."
-                    );
-                }
-            }
-
-            throw new AdapterError(
-                "Primary verify failed and no fallback adapter configured."
-            );
+            return this.fallbackAdapter.verify(value, hashed);
         }
+
+        throw new AdapterError(
+            `No adapter configured for detected hash algorithm: ${algorithm}`
+        );
     }
 }
