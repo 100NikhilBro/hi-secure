@@ -78,7 +78,7 @@ export class JsonManager {
 
                     req.parsedQuery = parsed;
 
-                    // ✅ visible + safe info
+                    
                     logger.info("Query parameters parsed", {
                         layer: "json-manager",
                         operation: "query-parse",
