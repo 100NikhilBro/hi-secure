@@ -2,6 +2,9 @@ import { AdapterError } from "../core/errors/AdapterError";
 import { HiSecureConfig } from "../core/types/HiSecureConfig";
 import { logger } from "../logging";
 
+
+// HashManager - is only responsible for hashing  
+
 interface HashAdapter {
     hash(value: string): Promise<string>;
     verify(value: string, hashed: string): Promise<boolean>;
