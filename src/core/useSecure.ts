@@ -11,7 +11,7 @@ export function useSecure(options?: SecureOptions | "api" | "strict" | "public")
 }
 
 
-//  Legacy support - route-level security
+//  route-level security support
 
 export function secureRoute(options?: SecureOptions) {
     const chain: any[] = [];
