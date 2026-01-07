@@ -102,9 +102,7 @@ export class HiSecure {
         });
     }
 
-    // Public Fluent APIs
-    
-
+    // Public Fluent API
     static auth(options?: { required?: boolean; roles?: string[] }) {
         const instance = this.getInstance();
         if (!instance.authManager) {
@@ -178,8 +176,7 @@ export class HiSecure {
         }
     };
 
-    // Global Middleware
-
+    // Global Middleware - globalLevel
     static middleware(options?: SecureOptions | "api" | "strict" | "public") {
         const instance = this.getInstance();
 
