@@ -485,7 +485,7 @@ It covers signup, JWT login, Google login, role-based access control, and proper
 <ul>
   <li>Signup using email and password</li>
   <li>Login using email and password (JWT-based)</li>
-  <li>Login with Google (ID token verification)</li>
+  <li>Login with Google (ID token verification) - Added Soon in Docs </li>
   <li>Role-based protected routes</li>
   <li>Optional authentication support</li>
   <li>Correct HiSecure bootstrap with reset rules</li>
@@ -511,7 +511,7 @@ HiSecure.getInstance({
     enabled: true,
     jwtSecret: process.env.JWT_SECRET || "supersecret_32_chars_minimum",
     jwtExpiresIn: "1d",
-    googleClientId: process.env.GOOGLE_CLIENT_ID
+    googleClientId: process.env.GOOGLE_CLIENT_ID   // this only added if need googleLogin as well
   }
 });
 
@@ -560,114 +560,121 @@ export default router;
 
 <h4>Signup (Email and Password)</h4>
 
-<pre><code>import { HiSecure } from "hi-secure";
+<pre><code>
+import { HiSecure } from "hi-secure";
 import { HttpError } from "../core/errors/HttpError.js";
 import User from "../models/User.js";
 
-export const signup = async (req, res, next) => {
-  try {
-    const { email, password, name } = req.body;
 
-    if (!email || !password) {
-      throw HttpError.BadRequest("Email and password required");
-    }
-
-    const existing = await User.findOne({ email });
-    if (existing) {
-      throw HttpError.Conflict("User already exists");
-    }
-
-    const passwordHash = await HiSecure.hash(password);
-
-    const user = await User.create({
-      email,
-      name,
-      passwordHash,
-      roles: ["user"],
-      provider: "local"
-    });
-
-    const token = HiSecure.jwt.sign({
-      userId: user.id,
-      roles: user.roles
-    });
-
-    res.status(201).json({ token, user });
-  } catch (err) {
-    next(err);
-  }
+const JWT_OPTIONS = {
+    issuer: 'hi-secure-backend',
+    audience: ['web-app', 'mobile-app'],
+    expiresIn: '7d',
+    subject: 'user-authentication'
 };
+
+
+exports.registerUser = async(req, res) => {
+    try {
+        const { name, email, password } = req.body;
+
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({
+                error: 'User already exists'
+            });
+        }
+
+        const hashedPassword = await HiSecure.hash(password);
+
+        const user = await User.create({
+            name,
+            email,
+            password: hashedPassword
+        });
+
+        const token = HiSecure.jwt.sign({
+                userId: user._id.toString(),
+                email: user.email,
+                name: user.name,
+                role: 'user'
+            },
+            JWT_OPTIONS
+        );
+
+        res.status(201).json({
+            message: 'User registered successfully',
+            token,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email
+            }
+        });
+
+    } catch (error) {
+        console.error('Registration error:', error);
+        res.status(500).json({
+            error: 'Registration failed',
+            details: error.message
+        });
+    }
+};
+
 </code></pre>
 
 <hr/>
 
 <h4>Login (Email and Password)</h4>
 
-<pre><code>export const loginWithJwt = async (req, res, next) => {
-  try {
-    const { email, password } = req.body;
+<pre><code>
 
-    const user = await User.findOne({ email });
-    if (!user || !user.passwordHash) {
-      throw HttpError.Unauthorized("Invalid credentials");
+exports.loginUser = async(req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(401).json({
+                error: 'Invalid credentials'
+            });
+        }
+
+        const isValid = await HiSecure.verify(password, user.password);
+        if (!isValid) {
+            return res.status(401).json({
+                error: 'Invalid credentials'
+            });
+        }
+
+        const token = HiSecure.jwt.sign({
+                userId: user._id.toString(),
+                email: user.email,
+                name: user.name,
+                role: 'user'
+            },
+            JWT_OPTIONS
+        );
+
+        res.json({
+            message: 'Login successful',
+            token,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email
+            }
+        });
+
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({
+            error: 'Login failed',
+            details: error.message
+        });
     }
-
-    const isValid = await HiSecure.verify(password, user.passwordHash);
-    if (!isValid) {
-      throw HttpError.Unauthorized("Invalid credentials");
-    }
-
-    const token = HiSecure.jwt.sign({
-      userId: user.id,
-      roles: user.roles
-    });
-
-    res.json({ token, user });
-  } catch (err) {
-    next(err);
-  }
 };
-</code></pre>
 
-<hr/>
-
-<h4>Login with Google</h4>
-
-<pre><code>export const loginWithGoogle = async (req, res, next) => {
-  try {
-    const { idToken } = req.body;
-    if (!idToken) {
-      throw HttpError.BadRequest("Google idToken required");
-    }
-
-    const googleUser = await HiSecure.jwt.google.verifyIdToken(idToken);
-
-    if (!googleUser.email_verified) {
-      throw HttpError.Unauthorized("Google email not verified");
-    }
-
-    let user = await User.findOne({ email: googleUser.email });
-
-    if (!user) {
-      user = await User.create({
-        email: googleUser.email,
-        name: googleUser.name,
-        provider: "google",
-        providerId: googleUser.sub,
-        roles: ["user"]
-      });
-    }
-
-    const token = HiSecure.jwt.sign({
-      userId: user.id,
-      roles: user.roles
-    });
-
-    res.json({ token, user });
-  } catch (err) {
-    next(err);
-  }
-};
 </code></pre>
 
 <hr/>
@@ -682,6 +689,61 @@ export const signup = async (req, res, next) => {
   }
 );
 </code></pre>
+
+
+<pre>
+<code>
+const router = express.Router();
+    router.post(
+        '/register',
+
+        HiSecure.validate([
+            body("name")
+            .notEmpty().withMessage("Name is required")
+            .isLength({ min: 3 }).withMessage("Name must be at least 3 characters"),
+
+            body("email")
+            .notEmpty().withMessage("Email is required")
+            .isEmail().withMessage("Invalid email format"),
+
+            body("password")
+            .notEmpty().withMessage("Password is required")
+            .isLength({ min: 6 }).withMessage("Password must be at least 6 characters"),
+        ]),
+
+        registerUser
+    );
+
+    router.post(
+        '/login',
+
+        HiSecure.validate([
+            body("email")
+            .notEmpty().withMessage("Email is required")
+            .isEmail().withMessage("Invalid email format"),
+
+            body("password")
+            .notEmpty().withMessage("Password is required")
+        ]),
+
+        HiSecure.rateLimit({ max: 5, windowMs: 15 * 60 * 1000 }),
+
+        loginUser
+    );
+
+    router.get(
+        '/profile',
+        HiSecure.auth({ required: true }),
+        getProfile
+    );
+
+    <!-- U can also add validator [Either zod Or express-validator] -->
+    router.post('/create', HiSecure.auth({ required: true }), createTask)
+    router.get('/get', HiSecure.auth({ required: true }), getTask)
+    router.put('/:id', HiSecure.auth({ required: true }), updateTask)
+    router.psot('/health',heatlh);
+</code>
+</pre>
 
 <hr/>
 
