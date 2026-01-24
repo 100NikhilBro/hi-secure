@@ -474,7 +474,7 @@ HiSecure.getInstance({
 <hr/>
 
 
-<h2>🔐 Final Authentication Setup</h2>
+<h2> Final Authentication Setup</h2>
 
 <p>
 This section demonstrates a complete, production-ready authentication setup using HiSecure.
