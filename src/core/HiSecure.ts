@@ -324,8 +324,6 @@
 
 
 
-
-
 import { HiSecureConfig } from "./types/HiSecureConfig.js";
 import { defaultConfig } from "./config.js";
 import { LIB_NAME, LIB_VERSION } from "./constants.js";
@@ -381,7 +379,7 @@ export class HiSecure {
     this.config = config;
   }
 
-  // ===== INIT (ONLY ONCE) =====
+  // ================= INIT (ONLY ONCE) =================
   static init(userConfig?: Partial<HiSecureConfig>): HiSecure {
     if (HiSecure.instance) return HiSecure.instance;
 
@@ -408,7 +406,7 @@ export class HiSecure {
       version: LIB_VERSION
     });
 
-    // Core managers
+    // ===== Core Managers =====
     this.hashManager = new HashManager(
       this.config.hashing,
       this.config.hashing.primary === "argon2"
@@ -440,7 +438,7 @@ export class HiSecure {
     this.jsonManager = new JsonManager();
     this.corsManager = new CorsManager();
 
-    // Auth (optional)
+    // ===== Auth (OPTIONAL) =====
     if (this.config.auth?.enabled) {
       this.authManager = new AuthManager({
         jwtSecret: process.env.JWT_SECRET || this.config.auth.jwtSecret!,
@@ -462,7 +460,7 @@ export class HiSecure {
     });
   }
 
-  // ===== PUBLIC STATIC API =====
+  // ================= PUBLIC STATIC API =================
 
   static auth(options?: { required?: boolean; roles?: string[] }) {
     const i = HiSecure.get();
@@ -479,21 +477,20 @@ export class HiSecure {
   }
 
   static rateLimit(preset: "strict" | "relaxed" | "api" | object) {
-  const i = HiSecure.get();
+    const i = HiSecure.get();
 
-  if (typeof preset === "string") {
-    const presets = {
-      strict: { mode: "strict" },
-      relaxed: { mode: "relaxed" },
-      api: { mode: "api" }
-    } as const;
+    if (typeof preset === "string") {
+      const presets = {
+        strict: { mode: "strict" },
+        relaxed: { mode: "relaxed" },
+        api: { mode: "api" }
+      } as const;
 
-    return i.rateLimitManager.middleware(presets[preset]);
+      return i.rateLimitManager.middleware(presets[preset]);
+    }
+
+    return i.rateLimitManager.middleware({ options: preset });
   }
-
-  return i.rateLimitManager.middleware({ options: preset });
-}
-
 
   static cors(options?: any) {
     return HiSecure.get().corsManager.middleware(options);
@@ -529,6 +526,8 @@ export class HiSecure {
 
     return i.createChain(finalOptions);
   }
+
+  // ================= INTERNAL =================
 
   private createChain(options: SecureOptions): any[] {
     const chain: any[] = [];
