@@ -49,7 +49,6 @@
 
 
 
-
 import { HiSecure } from "./HiSecure.js";
 import { SecureOptions } from "./types/SecureOptions.js";
 
