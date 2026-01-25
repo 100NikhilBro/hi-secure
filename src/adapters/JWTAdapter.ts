@@ -112,7 +112,7 @@ import { randomUUID } from "crypto";
 import { AdapterError } from "../core/errors/AdapterError";
 import { logger } from "../logging";
 
-type ExpiresIn = JwtSignOptions["expiresIn"]; // ✅ important
+type ExpiresIn = JwtSignOptions["expiresIn"];
 
 export interface JWTAdapterOptions {
   secret: string;
@@ -170,16 +170,25 @@ export class JWTAdapter {
     try {
       const jwtOptions: jwt.SignOptions = {
         algorithm: this.algorithm,
-        jwtid: options?.jti ?? randomUUID(),
-        subject: options?.subject
+        jwtid: options?.jti ?? randomUUID()
       };
 
-      const issuer = options?.issuer ?? this.issuer;
-      if (issuer) jwtOptions.issuer = issuer;
+      // ✅ subject ONLY if string
+      if (typeof options?.subject === "string") {
+        jwtOptions.subject = options.subject;
+      }
 
+      // ✅ issuer
+      const issuer = options?.issuer ?? this.issuer;
+      if (typeof issuer === "string") {
+        jwtOptions.issuer = issuer;
+      }
+
+      // ✅ audience
       const audience = normalizeAudience(options?.audience ?? this.audience);
       if (audience) jwtOptions.audience = audience;
 
+      // ✅ expiresIn
       const expires =
         options?.expiresIn !== undefined
           ? (options.expiresIn as ExpiresIn)
@@ -207,7 +216,9 @@ export class JWTAdapter {
         algorithms: [this.algorithm]
       };
 
-      if (this.issuer) verifyOptions.issuer = this.issuer;
+      if (typeof this.issuer === "string") {
+        verifyOptions.issuer = this.issuer;
+      }
 
       const audience = normalizeAudience(options?.audience ?? this.audience);
       if (audience) verifyOptions.audience = audience;
