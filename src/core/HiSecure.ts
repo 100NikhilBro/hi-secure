@@ -324,6 +324,8 @@
 
 
 
+
+
 import { HiSecureConfig } from "./types/HiSecureConfig.js";
 import { defaultConfig } from "./config.js";
 import { LIB_NAME, LIB_VERSION } from "./constants.js";
@@ -438,7 +440,7 @@ export class HiSecure {
     this.jsonManager = new JsonManager();
     this.corsManager = new CorsManager();
 
-    // ===== Auth (OPTIONAL) =====
+    // ===== AUTH (OPTIONAL) =====
     if (this.config.auth?.enabled) {
       this.authManager = new AuthManager({
         jwtSecret: process.env.JWT_SECRET || this.config.auth.jwtSecret!,
@@ -460,14 +462,38 @@ export class HiSecure {
     });
   }
 
-  // ================= PUBLIC STATIC API =================
-
+  // ================= AUTH =================
   static auth(options?: { required?: boolean; roles?: string[] }) {
     const i = HiSecure.get();
     if (!i.authManager) throw new Error("Auth not enabled");
     return i.authManager.protect(options);
   }
 
+  // ================= JWT =================
+  static jwt = {
+    sign(payload: object, options?: any) {
+      const i = HiSecure.get();
+      if (!i.authManager) throw new Error("Auth not enabled");
+      return i.authManager.sign(payload, options);
+    },
+
+    verify(token: string) {
+      const i = HiSecure.get();
+      if (!i.authManager) throw new Error("Auth not enabled");
+      return i.authManager.verify(token);
+    },
+
+    google: {
+      verifyIdToken(idToken: string) {
+        const i = HiSecure.get();
+        if (!i.authManager)
+          throw new Error("Auth not enabled (Google)");
+        return i.authManager.verifyGoogleIdToken(idToken);
+      }
+    }
+  };
+
+  // ================= OTHER UTILS =================
   static validate(schema: ValidationSchema) {
     return HiSecure.get().validatorManager.validate(schema);
   }
@@ -512,6 +538,7 @@ export class HiSecure {
     return HiSecure.get().hashManager.verify(value, hash);
   }
 
+  // ================= GLOBAL MIDDLEWARE =================
   static middleware(options?: SecureOptions | MiddlewarePreset) {
     const i = HiSecure.get();
 
@@ -526,8 +553,6 @@ export class HiSecure {
 
     return i.createChain(finalOptions);
   }
-
-  // ================= INTERNAL =================
 
   private createChain(options: SecureOptions): any[] {
     const chain: any[] = [];
