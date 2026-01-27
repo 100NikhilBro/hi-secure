@@ -22,7 +22,7 @@ Managing these separately leads to duplicated logic, configuration drift and sub
 <ul>
   <li>
     <a href="https://github.com/100NikhilBro/Hackthon" target="_blank">
-      Hackthon Backend Project
+      Demo Backend Project - for Hackthons MVPs and personal Projects
     </a>
   </li>
 </ul>
