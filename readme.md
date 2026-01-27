@@ -460,21 +460,24 @@ Execution order is deterministic and isolated to the route.
 JWT support is optional. Enable it only if you want authentication features.
 </p>
 
-<pre><code>HiSecure.resetInstance();
-
-HiSecure.getInstance({
+<pre><code>
+  
+HiSecure.init({
   auth: {
     enabled: true,
-    jwtSecret: process.env.JWT_SECRET,
-    jwtExpiresIn: "1d"
-  }
+    jwtSecret:
+    process.env.JWT_SECRET , //  "at least 32 - if not it shows warning in logs"
+    jwtExpiresIn: "1d",
+  },
 });
+  
+  
 </code></pre>
 
 <hr/>
 
 
-<h2>🔐 Final Authentication Setup</h2>
+<h2>Final Authentication Setup</h2>
 
 <p>
 This section demonstrates a complete, production-ready authentication setup using HiSecure.
@@ -493,41 +496,83 @@ It covers signup, JWT login, Google login, role-based access control, and proper
 
 <hr/>
 
-<h3>Application Bootstrap (server.js / app.js)</h3>
+<h3>Application Bootstrap (app.ts / app.js)</h3>
 
-<pre><code>import express from "express";
-import dotenv from "dotenv";
+<pre><code>
+  
+import express from "express";
 import { HiSecure } from "hi-secure";
-import authRoutes from "./routes/auth.routes.js";
+import dotenv from "dotenv";
 
 dotenv.config();
 
-const app = express();
-
-HiSecure.resetInstance();
-
-HiSecure.getInstance({
+HiSecure.init({
   auth: {
     enabled: true,
-    jwtSecret: process.env.JWT_SECRET || "supersecret_32_chars_minimum",
+    jwtSecret:
+    process.env.JWT_SECRET ,
     jwtExpiresIn: "1d",
-    googleClientId: process.env.GOOGLE_CLIENT_ID   // this only added if need googleLogin as well
-  }
+  },
 });
+
+const app = express();
 
 app.use(HiSecure.middleware("api"));
 
-app.use("/auth", authRoutes);
 
-app.listen(3000);
+// When u use the Frontend [Because - Cors is the browser's security]
+// HiSecure.cors({
+//     origin:"*" , // We can add our custome end points as well 
+//     credentials:true
+// })
+
+
+import authRoutes from "./routes/auth.route";
+import issueRoutes from "./routes/issue.route";
+import notificationRoutes from "./routes/notification.route";
+import communityRoutes from "./routes/community.route";
+
+app.use("/api/auth", authRoutes);
+app.use("/api/issues", issueRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/community", communityRoutes);
+
+app.get("/", (_req, res) => {
+  res.json({ success: true, message: "Backend running" });
+});
+
+export default app;
+  
 </code></pre>
 
-<p>
-<em>Note:</em> <code>resetInstance()</code> is recommended only for tests or starter templates.
-It should not be used repeatedly in production runtime.
-</p>
+
+
+
+<h3>Application Bootstrap (server.ts / server.js)</h3>
+
+<pre><code>
+
+import app from "./app";
+import dotenv from "dotenv";
+import { connectDB } from "./config/db";
+
+dotenv.config();
+
+connectDB();
+
+const PORT = process.env.PORT;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+</code></pre>
+
+
+
 
 <hr/>
+
 
 <h3>Authentication Routes</h3>
 
@@ -552,75 +597,63 @@ router.get(
 );
 
 export default router;
+
 </code></pre>
 
 <hr/>
 
 <h3>Authentication Controllers</h3>
 
+
 <h4>Signup (Email and Password)</h4>
 
 <pre><code>
-import { HiSecure } from "hi-secure";
-import { HttpError } from "../core/errors/HttpError.js";
-import User from "../models/User.js";
 
 
-const JWT_OPTIONS = {
-    issuer: 'hi-secure-backend',
-    audience: ['web-app', 'mobile-app'],
-    expiresIn: '7d',
-    subject: 'user-authentication'
-};
+export const register = async (req: Request, res: Response) => {
+  try {
+    const { name, email, password, role, hostel, block, room } = req.body;
 
-
-exports.registerUser = async(req, res) => {
-    try {
-        const { name, email, password } = req.body;
-
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({
-                error: 'User already exists'
-            });
-        }
-
-        const hashedPassword = await HiSecure.hash(password);
-
-        const user = await User.create({
-            name,
-            email,
-            password: hashedPassword
-        });
-
-        const token = HiSecure.jwt.sign({
-                userId: user._id.toString(),
-                email: user.email,
-                name: user.name,
-                role: 'user'
-            },
-            JWT_OPTIONS
-        );
-
-        res.status(201).json({
-            message: 'User registered successfully',
-            token,
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email
-            }
-        });
-
-    } catch (error) {
-        console.error('Registration error:', error);
-        res.status(500).json({
-            error: 'Registration failed',
-            details: error.message
-        });
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'User already exists'
+      });
     }
+
+    const hashedPassword = await HiSecure.hash(password);
+
+    const user = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      role: role || 'student',
+      hostel,
+      block,
+      room
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: 'User registered successfully',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: 'Registration failed',
+      error: error.message
+    });
+  }
 };
 
+  
 </code></pre>
 
 <hr/>
@@ -629,175 +662,104 @@ exports.registerUser = async(req, res) => {
 
 <pre><code>
 
-exports.loginUser = async(req, res) => {
-    try {
-        const { email, password } = req.body;
 
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(401).json({
-                error: 'Invalid credentials'
-            });
-        }
+  export const login = async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
 
-        const isValid = await HiSecure.verify(password, user.password);
-        if (!isValid) {
-            return res.status(401).json({
-                error: 'Invalid credentials'
-            });
-        }
-
-        const token = HiSecure.jwt.sign({
-                userId: user._id.toString(),
-                email: user.email,
-                name: user.name,
-                role: 'user'
-            },
-            JWT_OPTIONS
-        );
-
-        res.json({
-            message: 'Login successful',
-            token,
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email
-            }
-        });
-
-    } catch (error) {
-        console.error('Login error:', error);
-        res.status(500).json({
-            error: 'Login failed',
-            details: error.message
-        });
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
+      });
     }
+
+    const isPasswordValid = await HiSecure.verify(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
+      });
+    }
+
+    const token = HiSecure.jwt.sign({
+      userId: user._id.toString(),
+      email: user.email,
+      role: user.role
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Login successful',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: 'Login failed',
+      error: error.message
+    });
+  }
 };
 
 </code></pre>
 
 <hr/>
 
+
+
 <h3>Role-Based Protected Routes</h3>
 
-<pre><code>app.get(
-  "/admin",
+<pre><code>
+  
+const router = Router();
+
+router.post(
+  "/",
+  HiSecure.auth({ roles: ["student", "admin"] }),
+  HiSecure.validate([
+    body("title").notEmpty(),
+    body("description").notEmpty(),
+    body("category").notEmpty()
+  ]),
+  createIssue
+);
+
+router.get(
+  "/my",
+  HiSecure.auth({ required: true }),
+  getMyIssues
+);
+
+router.post(
+  "/assign",
   HiSecure.auth({ roles: ["admin"] }),
-  (req, res) => {
-    res.json({ message: "Welcome Admin" });
-  }
+  assignIssue
 );
-</code></pre>
 
-
-<pre>
-<code>
-const router = express.Router();
-    router.post(
-        '/register',
-
-        HiSecure.validate([
-            body("name")
-            .notEmpty().withMessage("Name is required")
-            .isLength({ min: 3 }).withMessage("Name must be at least 3 characters"),
-
-            body("email")
-            .notEmpty().withMessage("Email is required")
-            .isEmail().withMessage("Invalid email format"),
-
-            body("password")
-            .notEmpty().withMessage("Password is required")
-            .isLength({ min: 6 }).withMessage("Password must be at least 6 characters"),
-        ]),
-
-        registerUser
-    );
-
-    router.post(
-        '/login',
-
-        HiSecure.validate([
-            body("email")
-            .notEmpty().withMessage("Email is required")
-            .isEmail().withMessage("Invalid email format"),
-
-            body("password")
-            .notEmpty().withMessage("Password is required")
-        ]),
-
-        HiSecure.rateLimit({ max: 5, windowMs: 15 * 60 * 1000 }),
-
-        loginUser
-    );
-
-    router.get(
-        '/profile',
-        HiSecure.auth({ required: true }),
-        getProfile
-    );
-
-    <!-- U can also add validator [Either zod Or express-validator] -->
-    router.post('/create', HiSecure.auth({ required: true }), createTask)
-    router.get('/get', HiSecure.auth({ required: true }), getTask)
-    router.put('/:id', HiSecure.auth({ required: true }), updateTask)
-    router.psot('/health',heatlh);
-</code>
-</pre>
-
-<hr/>
-
-<h3>JWT Options (Optional)</h3>
-
-<p>
-HiSecure does not require JWT options for most use cases.
-Default configuration provided during initialization is sufficient.
-</p>
-
-<pre><code>HiSecure.getInstance({
-  auth: {
-    enabled: true,
-    jwtSecret: process.env.JWT_SECRET,
-    jwtExpiresIn: "1d"
-  }
-});
-</code></pre>
-
-<p>
-Advanced JWT options can be provided only when needed:
-</p>
-
-<pre><code>HiSecure.jwt.sign(
-  {
-    userId: user.id,
-    roles: user.roles
-  },
-  {
-    issuer: "my-app",
-    audience: ["web", "mobile"],
-    subject: "user-auth",
-    expiresIn: "7d"
-  }
+router.put(
+  "/status",
+  HiSecure.auth({ roles: ["staff", "admin"] }),
+  updateIssueStatus
 );
+
+router.put(
+  "/close",
+  HiSecure.auth({ required: true }),
+  closeIssue
+);
+
+export default router;
+
+  
 </code></pre>
-
-<p>
-JWT options are optional and intended for advanced authentication scenarios.
-</p>
-
-<hr/>
-
-<h3>Rules to Remember</h3>
-
-<ul>
-  <li>Initialize HiSecure once during application startup</li>
-  <li>Use resetInstance only for tests or starter templates</li>
-  <li>Do not initialize HiSecure inside controllers</li>
-  <li>Google login is used for identity verification only</li>
-  <li>Authorization is enforced using JWT payload and roles</li>
-</ul>
-
-<hr/>
 
 
 <h2>Summary</h2>
