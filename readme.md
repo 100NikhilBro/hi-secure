@@ -1,3 +1,4 @@
+
 <h1 align="center">🔒 HiSecure</h1>
 <p align="center"><strong>One-line security for Express.js</strong></p>
 
@@ -6,15 +7,25 @@ HiSecure unifies authentication, validation, sanitization, rate-limiting, header
 into a single, consistent security layer for Express applications.
 </p>
 
+
 <hr/>
 
 <h2>Overview</h2>
+
 
 <p>
 Modern Express applications require multiple security libraries to handle authentication,
 password hashing, validation, sanitization, rate limiting, headers, compression and parsing.
 Managing these separately leads to duplicated logic, configuration drift and subtle bugs.
 </p>
+
+<ul>
+  <li>
+    <a href="https://github.com/100NikhilBro/Hackthon" target="_blank">
+      Hackthon Backend Project
+    </a>
+  </li>
+</ul>
 
 <p>
 <strong>HiSecure solves this by acting as a single orchestration layer.</strong>
@@ -768,6 +779,8 @@ export default router;
 HiSecure provides a complete, opinionated security layer for Express.
 It focuses on correctness, safety and developer productivity.
 </p>
+
+
 
 <p align="center">
 <strong>One dependency. One middleware. Complete security.</strong>
