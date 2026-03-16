@@ -1,5 +1,5 @@
 
-<h1 align="center">🔒 HiSecure</h1>
+<h1 align="center">🔒 HiSecure </h1>
 <p align="center"><strong>One-line security for Express.js</strong></p>
 
 <p align="center">
